@@ -4,20 +4,25 @@
 __author__ = 'cagibi'
 
 from selenium import webdriver
+import win32gui
+import re
 
-driver = webdriver.Ie()
+#personalisation des options(rep de download et adresse vers chromdriver
+options = webdriver.ChromeOptions()
+prefs = {"download.default_directory" : "c:/tmp"}
+options.add_experimental_option("prefs",prefs)
+chromedriver = "c:/windows/system32/chromedriver.exe"
+driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
 
-URL = "http://www.histdata.com/download-free-forex-historical-data/?/ninjatrader/tick-bid-quotes/eurusd/2016/9/"
+driver.set_page_load_timeout(30)
+
+
+URL = "http://www.histdata.com/download-free-forex-historical-data/?/ninjatrader/tick-bid-quotes/eurusd/2016/08/"
 
 
 driver.get(URL)
 
-toclic = driver.find_element_by_link_text("HISTDATA_COM_NT_EURUSD_T_BID_201609.zip")
-
-
-
-import win32gui
-import re
+toclic = driver.find_element_by_link_text("HISTDATA_COM_NT_EURUSD_T_BID_201608.zip")
 
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
