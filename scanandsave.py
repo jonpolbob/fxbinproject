@@ -3,11 +3,31 @@
 
 __author__ = 'cagibi'
 
+
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+
+#penser a couper skype !
+#sinon port 8080 est bloqué
+#en mode cmd adminstrateur :
+#net stat -a -n -o |findstr 8080
+# lire le pid de la tache puis
+#taskkill /F /pid 1234
+
+#demarrage des autorisations google a placer avant demarrage de selenium ?
+gauth = GoogleAuth()
+gauth.LocalWebserverAuth()
+
+drive = GoogleDrive(gauth)
+
+
 from selenium import webdriver
 import win32gui
 import re
 import os
 import zipfile
+
+
 
 #personalisation des options(rep de download et adresse vers chromdriver
 options = webdriver.ChromeOptions()
@@ -17,6 +37,8 @@ chromedriver = "c:/windows/system32/chromedriver.exe"
 driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
 
 driver.set_page_load_timeout(30)
+
+
 
 
 class WindowMgr:
@@ -85,22 +107,50 @@ def loadpairemoisan(paire,mois,an):
     return newpath
 
 
+#le main qui lit les fichiers sur le site, fabrique un zip et l'envoie dans le drive
+
 #listemois=["01","02","03","04","05","06","07","08","09"]
 listemois=["01"]
 listepaires=["EURUSD","EURCHF","EURGBP"] #,"EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
 
+
+
+print("identif OK")
+
 for mois in listemois:
 
+    # lecture des fichiers du mois sur le site
     listefic = []  # liste des fichier extraits
     for pairename in listepaires :
+        print ("load")
         fichname = loadpairemoisan(pairename, mois, "2016")
         listefic.append(fichname)
 
     #on refusionne tout dans un zip du mois
     zipoutname = "BID"+mois+"2016"
-    zfileout = zipfile.ZipFile(zipoutname+".zip", 'w')
+    zfileout = zipfile.ZipFile("c:\\tmp\\"+zipoutname+".zip", 'w')
     for ficname in listefic:
         zfileout.write(ficname)
 
+    #on transfert le zip dans le drive
+    fid = ""
 
+#on cherche le ID du dossier 'data' diu drive
+    file_list = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+    for file1 in file_list:
+        print('title: %s, id: %s' % (file1['title'], file1['id']))
+        if file1['title'] == 'data':
+            fid = file1['id']
+            print("found : ", fid)
 
+    #on envoie le fichier zip dans ce dossier
+    # les bon arguments pour indiquer le id d'un sous repertoire ou ecrire
+    # et changer le titre dans le drive
+    filecsv = drive.CreateFile({"mimeType":"application/zip","title": zipoutname+".zip", "parents": [{"kind": "drive#fileLink", "id": fid}]})
+
+    print("create ok")
+
+    # ci dessous : le fichier part dans la racine du drive
+    filecsv.SetContentFile("c:\\tmp\\"+zipoutname+".zip")
+
+    print ("send "+zipoutname+" ok")

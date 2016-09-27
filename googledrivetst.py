@@ -27,12 +27,12 @@ for file1 in file_list:
 
 #les bon arguments pour indiquer le id d'un sous repertoire ou ecrire
 # et changer le titre dans le drive
-filecsv = drive.CreateFile({"title":"moncsdetest" , "parents": [{"kind": "drive#fileLink","id": fid}]})
+filecsv = drive.CreateFile({"mimeType":"application/zip","title":"BID1206.zip" , "parents": [{"kind": "drive#fileLink","id": fid}]})
 
 print("create ok")
 
 # ci dessous : le fichier part dans la racine du drive
-filecsv.SetContentFile("c:\\tmp\\form1.cs")
+filecsv.SetContentFile("c:\\tmp\\BID012016.zip")
 print("setcontent")
 
 
