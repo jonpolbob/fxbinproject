@@ -14,10 +14,9 @@ options = webdriver.ChromeOptions()
 prefs = {"download.default_directory" : "c:/tmp"}
 options.add_experimental_option("prefs",prefs)
 chromedriver = "c:/windows/system32/chromedriver.exe"
-driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
+driver = webdriver.Chrome(executable_path=chromedriver, tions=options)
 
 driver.set_page_load_timeout(30)
-
 
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""

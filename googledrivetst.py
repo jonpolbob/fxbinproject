@@ -24,7 +24,6 @@ for file1 in file_list:
         print ("found : ",fid)
 #    sys.exit()
 
-
 #les bon arguments pour indiquer le id d'un sous repertoire ou ecrire
 # et changer le titre dans le drive
 filecsv = drive.CreateFile({"mimeType":"application/zip","title":"BID1206.zip" , "parents": [{"kind": "drive#fileLink","id": fid}]})

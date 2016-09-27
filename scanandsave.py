@@ -9,7 +9,7 @@ from pydrive.drive import GoogleDrive
 
 #penser a couper skype !
 #sinon port 8080 est bloqué
-#en mode cmd adminstrateur :
+#en mode cmd adminstrateur
 #net stat -a -n -o |findstr 8080
 # lire le pid de la tache puis
 #taskkill /F /pid 1234
@@ -22,6 +22,8 @@ drive = GoogleDrive(gauth)
 
 
 from selenium import webdriver
+import selenium
+
 import win32gui
 import re
 import os
@@ -79,8 +81,23 @@ def loadpairemoisan(paire,mois,an):
 
     driver.get(URL)
 
-    toclic = driver.find_element_by_link_text(FileName) #le nom de fichier est l'objet clicable
-    toclic.click()
+    print("loaded")
+#    toclic = None
+#    while (toclic == None):
+    toclic = driver.find_element_by_id("a_file")
+            #.find_element_by_link_text(FileName) #le nom de fichier est l'objet clicable
+    print("clic : ", FileName)
+    print (toclic.text)
+
+    #on attend la fermeture des popups qui serient apparues devant le bouton (message des cookies)
+    canclick=0
+    while canclick==0:
+        try:
+            toclic.click()
+            canclick=1
+        except selenium.common.exceptions.WebDriverException as e:
+            z=e
+
 
     pathdownload = "c:/tmp/"+RealFileName #attention le nom est different entre le zip et le lien clic
 
@@ -94,7 +111,7 @@ def loadpairemoisan(paire,mois,an):
     #on le decompress dans tmp
     #puis on enleve le zip
     zf = zipfile.ZipFile(pathdownload, 'r')
-    print (zf.filelist)
+
     for i in zf.filelist:
         if i.filename.find(".csv") != -1 :
             print("extract ",i.filename)
