@@ -7,6 +7,9 @@ __author__ = 'cagibi'
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
+
+import clicselenium  #pour le import
+
 #penser a couper skype !
 #sinon port 8080 est bloqué
 #en mode cmd adminstrateur

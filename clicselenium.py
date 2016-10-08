@@ -1,22 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+#programme lisant les datas sur free-forex, lit les paires d'un mois annee en bid ou call
+#les dezippe , met ensemble toutes les paires d"un meme mois an
+#et en fait un zip
+
+#il reste juste a tout experdier dans googledrive
+
+#penser a mettre chromedriver.exe dans le path
+
+#selon les parametres de chrome il y a ou non un message d'alerte des cookies
+# avec firefow ca y est, avec chrome ca n'y est pas toujours
+
 __author__ = 'cagibi'
 
 from selenium import webdriver
+import selenium
 import win32gui
 import re
 import os
 import zipfile
 
-#personalisation des options(rep de download et adresse vers chromdriver
+# personalisation des options(rep de download et adresse vers chromdriver
 options = webdriver.ChromeOptions()
-prefs = {"download.default_directory" : "c:/tmp"}
-options.add_experimental_option("prefs",prefs)
+prefs = {"download.default_directory": "c:/tmp"}
+options.add_experimental_option("prefs", prefs)
 chromedriver = "c:/windows/system32/chromedriver.exe"
-driver = webdriver.Chrome(executable_path=chromedriver, tions=options)
+driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
 
 driver.set_page_load_timeout(30)
+
 
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
@@ -52,15 +65,24 @@ def __init__(self):
 def loadpairemoisan(paire,mois,an):
     URL = "http://www.histdata.com/download-free-forex-historical-data/?/ninjatrader/tick-bid-quotes/"+paire+"/"+an+"/"+mois+"/"
     FileName = "HISTDATA_COM_NT_"+paire+"_T_BID_"+an+mois+".zip"
-    RealFileName = "HISTDATA_COM_NT_"+pairename+"_T_BID"+an+mois+".zip"
+    RealFileName = "HISTDATA_COM_NT_"+paire+"_T_BID"+an+mois+".zip"
 
     driver.get(URL)
 
     toclic = driver.find_element_by_link_text(FileName) #le nom de fichier est l'objet clicable
-    toclic.click()
+    notseen = True
+    while (notseen):
+        notseen =False
+        try:
+           toclic.click()
+        except selenium.ElementNotVisible :
+            notseen = True
+
+
 
     pathdownload = "c:/tmp/"+RealFileName #attention le nom est different entre le zip et le lien clic
 
+    #ici on attend la fin du telechargement
     notfound = True
     while (notfound):
         if os.path.exists(pathdownload):
@@ -74,32 +96,51 @@ def loadpairemoisan(paire,mois,an):
     print (zf.filelist)
     for i in zf.filelist:
         if i.filename.find(".csv") != -1 :
-            print("extract ",i.filename)
+            print("extract dans c:\\tmp : ",i.filename)
             newpath = zf.extract(i,path="c:/tmp")
             print(newpath)
+            os.rename(newpath,"c:\\tmp\\"+paire+".csv")
 
     zf.close()
     os.remove(pathdownload)
 
-    return newpath
+    return newpath,"c:\\tmp\\"+paire+".csv"
 
 
-#listemois=["01","02","03","04","05","06","07","08","09"]
-listemois=["01"]
-listepaires=["EURUSD","EURCHF","EURGBP"] #,"EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
 
-for mois in listemois:
+def liremois(mois,listepairs):
 
     listefic = []  # liste des fichier extraits
+    #on efface tous les csv du repetroire
+    for todel in os.listdir("c:\\tmp"):
+        if '.csv' in todel:
+            os.remove("c:\\tmp\\"+todel)
+
     for pairename in listepaires :
-        fichname = loadpairemoisan(pairename, mois, "2016")
+        print ("lecture de :",pairename)
+        dezipname,fichname = loadpairemoisan(pairename, mois, "2016") #deux arguments en retrou, le 2eme est le nom actuel du fichier
         listefic.append(fichname)
 
     #on refusionne tout dans un zip du mois
-    zipoutname = "BID"+mois+"2016"
-    zfileout = zipfile.ZipFile(zipoutname+".zip", 'w')
+    zipoutname = "c:\\tmp\\"+"BID"+mois+"2016"+".zip"
+    zfileout = zipfile.ZipFile(zipoutname, 'w')
     for ficname in listefic:
-        zfileout.write(ficname)
+        print("zip :",ficname," dans", zipoutname )
+        inzipname = os.path.relpath(ficname,"c:\\tmp")
+        print(inzipname)
+        zfileout.write(ficname,inzipname) # on ne garde qu e le nom fichier on vire le path
+
+    return zipoutname
+
+#ici le main
+#listemois=["01","02","03","04","05","06","07","08","09"]
+listemois=["01"]
+listepaires=["EURUSD","EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
 
 
+#antidemarrage en librrairie
+if __name__ == "__main__":
+    # le programme principal
+    for mois in listemois:
+        liremois(mois,listepairs)
 
