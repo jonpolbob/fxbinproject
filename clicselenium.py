@@ -118,11 +118,11 @@ def liremois(mois,listepairs):
 
     for pairename in listepaires :
         print ("lecture de :",pairename)
-        dezipname,fichname = loadpairemoisan(pairename, mois, "2016") #deux arguments en retrou, le 2eme est le nom actuel du fichier
+        dezipname,fichname = loadpairemoisan(pairename, mois, "2015") #deux arguments en retrou, le 2eme est le nom actuel du fichier
         listefic.append(fichname)
 
     #on refusionne tout dans un zip du mois
-    zipoutname = "c:\\tmp\\"+"BID"+mois+"2016"+".zip"
+    zipoutname = "c:\\tmp\\"+"BID"+mois+"2015"+".zip"
     zfileout = zipfile.ZipFile(zipoutname, 'w')
     for ficname in listefic:
         print("zip :",ficname," dans", zipoutname )
@@ -130,6 +130,7 @@ def liremois(mois,listepairs):
         print(inzipname)
         zfileout.write(ficname,inzipname) # on ne garde qu e le nom fichier on vire le path
 
+    zfileout.close()
     return zipoutname
 
 #ici le main
