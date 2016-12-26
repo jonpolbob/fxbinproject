@@ -6,7 +6,10 @@
 
 # 30 oct 16 : ajout de generedata qui lit un paire dans ce zip
 
+#27 dec 16 : je resuis ce fichier a la lecture dans google (ou sur tmp)
+#il ne restera qu'un yield pour lire ligne par ligne un fichier sur le drive ou dans le tmp
 
+#il fautdar faire un include depuis aileurs
 
 __author__ = 'cagibi'
 
@@ -16,7 +19,11 @@ import os
 import zipfile
 import datetime
 #recupere une paire du google drive
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.finance import candlestick2_ohlc
 
+# ----- lit un fichier dans le drive------
 
 def readgoogle(annee,mois):
     # demarrage des autorisations google a placer avant demarrage de selenium ?
@@ -68,7 +75,11 @@ def readgoogle(annee,mois):
     filezip.GetContentFile(namzipdisk) #pour test : on rajoute un _ avcant le nom
     return namzipdisk
 
-#decode une ligne de fichier csv
+# ---------- decode une ligne de fichier csv ------------------
+# renvoie
+# #le nb minutes depuis debut du mois
+# la date
+# la valeur de begin
 def decodeline(laligne):
     colonnes = laligne.split(b';')
     # print (colonnes)
@@ -80,12 +91,28 @@ def decodeline(laligne):
     minute = int(ladate[11:13])
     secondes = int(ladate[13:15])
     datenumber = datetime.datetime(year=annee, month=mois, day=jour, hour=heure, minute=minute, second=secondes)
+    datenumberdebut = datetime.datetime(year=annee, month=mois, day=1, hour=0, minute=0, second=0)
+    deltatime = datenumber - datenumberdebut
+    deltamins = int(deltatime.total_seconds()/60)
+
     beginvalue = colonnes[1]
-    # print(ladate)
-    # print (annee,mois,jour,heure,minute)
-    # print(datenumber.year, datenumber.month, datenumber.day,datenumber.hour, datenumber.minute)
-    # print (float(begin))
-    return datenumber, float(beginvalue)
+
+   #deltamins = nb minutes depuis debut du mois
+   #datenumber = la date-heure de cette mesure
+    return deltamins, datenumber, float(beginvalue)
+
+
+#renvoie le nom de 1 ou 2 zip correspondant a cette semaine
+#import datetime
+import time
+
+def getnomzip(annee,mois): #annee est un string, week ens un nb
+    stryear = str(annee)
+    strmois=  str(mois).zfill(2)
+    nomzip = r"c:\tmp\BID"+strmois+stryear+'.zip'  #nom du fichier zip correspondant
+    return nomzip
+
+
 
 #generedata
 #lit un paire dans le zip
@@ -96,13 +123,26 @@ def generedata(nomzip,paire):
     z1 = zipfile.ZipFile(fh1)  # classe lisant le zipdanzs le fichier ouvert
     with z1.open(paire+".csv", mode='r') as read1:
         for laligne in read1 :
-            date,begin = decodeline(laligne)
-            letab.append([date,begin])
-            print (date)
+            numsample,date,begin = decodeline(laligne) # lecture de la ligne
+            letab.append([float(numsample),begin])
     fh1.close()
-    return letab
+
+    # generedata
+    # le zip ligne par ligne avec un yield
+    # retourn None,None,None a la fin
+    def getlinemoispaire(nomzip, paire):
+        letab = []
+        fh1 = open(nomzip, 'rb')
+        z1 = zipfile.ZipFile(fh1)  # classe lisant le zipdanzs le fichier ouvert
+        with z1.open(paire + ".csv", mode='r') as read1:
+            for laligne in read1:
+                numsample, date, begin = decodeline(laligne)  # lecture de la ligne
+                yield numsample, date, begin
+        fh1.close()
+        return None,None,None
 
 
+#fonction decodant le temps datetime pour en faire un temps jour heure minute jour de la semaine utile pour les graphs du mois
 def decodetime(time):
     letuple = time.timetuple()
 
@@ -113,120 +153,164 @@ def decodetime(time):
     return day,hour,minute,weekday
 
 
-#bin1Min fait un fichier bin 1 minute avec les 2 tableaux en entree
-def bin1min(year,month,tab1,tab2):
-    currentday=1
-    currenthour=0
-    currentmin=0
-    currenttime = (currentday*24+currenthour)*60+currentmin
-    currentdatime = datetime.datetime(year=year,month=month,day=currentday)
-    currentdayw = currentdatime.timetuple().tm_wday
 
-    time1finish = False
-    time2finish = False
+#fonction de normalisation
+#normalisation premier mode : on prend les 50 dernieres valeurs et on en fait la moyenne -> ce sera la moyenne
+#on ne noermalise par l'ecart type
+#recoit un tableau en entree
 
-    item1 = tab1.__iter__()
-    item2 = tab2.__iter__()
-    #on commence par un debut de tranche de temps
-    newtime = True; #on est a un debut de tdt
-    hasvalue1 = False #pas encore de valeur pour le 2
-    hasvalue2 = False #pas encore de valeur pour le 1
-    candle1 = []
+def normalise2(tabin):
+    localstackX=[]
+    localstackY = []
+    outtabX=[]
+    outtabY = []
+    lasttime = 0
+    ledeb = None
+    outtabYdeb = []
+    outtabYfin = []
+    outtabYmin = []
+    outtabYmax = []
 
-    deb1=-1
-    max1=-1
-    min1=-1
-    fin1 = -1
+    for laline in tabin:
+        if ledeb == None: #premiere ligne = on int la candle
+            ledeb = laline[1]
+            lemin = laline[1]
+            lemax = laline[1]
+            lasttime = laline[0]
 
-    while (True):
+        if laline[0] == lasttime: #meme heure on met a jour les vleurs de la candle
+            lemax = max(lemax,laline[1])
+            lemin = min(lemax,laline[1])
+            lafin = laline[1]
+        else : #changement d'heure : on normalise le candle et on genere la sortie
+            #on empile la nouvelle valeur pour le calcul des moyennes
+            lamediane = (ledeb + lafin)/2
+            if len(localstackY) > 30: #il y a assez de valeurs
+                moyenne = sum(localstackY) / len(localstackY)  # le stack avant la candle
+                # localstackX.remove(localstack[0])
+                localstackY.remove(localstackY[0])
 
-        if hasvalue1 == False:
-            deb1 = item1[valeur]
-            fin1 = item1[valeur]
-            max1 = item1[valeur]
-            min1 = item1[valeur]
-            hasvalue1 = True
+            # localstackX.append(laline[0])
+            localstackY.append(lamediane) #la pile est pleine de medianes
 
-        fin1 = item1[valeur]
+            #on enregistre la candle
+            if len(localstackY) > 30:  # il y a assez de valeurs : on fait une candle normalisee
+                outtabX.append(laline[0])
+                outtabYdeb.append(ledeb  - lamediane)
+                outtabYfin.append(lafin - lamediane)
+                outtabYmax.append(lemax - lamediane)
+                outtabYmin.append(lemin - lamediane)
 
-        if max1 < item1[valeur]:
-            max1 = item1[valeur]
-        if min1 > item[valeur]:
-            min1 = item[valeur]
+            #on init la prochaine candle
+            ledeb = laline[1]
+            lemin = laline[1]
+            lemax = laline[1]
+            lafin = laline[1]
+            lasttime = laline[0]
 
-        if hasvalue1 == False:
-           deb2 = item2[valeur]
-           fin2 = item2[valeur]
-           max2 = item2[valeur]
-           min2 = item2[valeur]
-           hasvalue2 = True
-
-        fin2 = item2[valeur]
-        if max2 < item2[valeur]:
-           max2 = item2[valeur]
-        if min2 > item[valeur]:
-          min2 = item[valeur]
-
-        day, hour, minute, weekday = decodetime(item1)
-        if ((day*24+hour)*60+min) > currenttime :  #le temps 1 a depasse le temps courant
-            time1finish=True;
-
-        day, hour, minute, weekday = decodetime(item2)
-        if ((day * 24 + hour) * 60 + min) > currenttime: #le temps 2 a depasse le temps courant
-            time2finish = True;
-
-        #ici on a fini une tranche de temps (qui a ete remplie ou non)
-        if time1finish and time2finish : # timebin finie
-            if hasvalue1: #il y a des valeurs pour 1
-                candle1.append([currenttime,currentdayw,day,hour,minute,deb1,max1,min1,fin1])
-
-            #on passe au temps suivant
-            currentday = 1
-            curenthour = 0
-            currentmin = currentmin+1
-
-            if currentmin == 60:
-                currentmin =0
-                currenthour = currenthour+1
-                if currenthour == 24 :
-                    currenthour =0
-                    currentday = currentday+1
-            currenttime = (currentday * 24 + currenthour) * 60 + currentmin
-
-            newtime=True
+    return outtabX, outtabYdeb, outtabYmax, outtabYmin, outtabYfin
 
 
-        if not time2finish:
-            item2 = tab2.__next__()
-
-        if not time1finish:
-            item1 = tab1.__next__()
-
-
-    return
-
-
-
-
+# -----------------PAR ICI LE MAIN ----------------------------
 import os.path
 
-#on test si on a deja charge de le zip
-annee = "2015"
-mois = "10"
 
-#regarde si le fichier existe
-zipfichname = "BID" + mois + annee + ".zip"  # nom sur le drive
-namzipdisk = "c:\\tmp\\" + zipfichname
-if os.path.isfile(namzipdisk):
-    print("fichier "+namzipdisk+" retrouve")
-    nomfich = namzipdisk
-else:
-    print("lecture fichier " + namzipdisk + " sur le drive")
-    nomfich = readgoogle("2015","10")
+#lit nbjours du nom de fichier a partir du jour du mois =  jour
+#ligne par ligne
+#renvoie le nb de minutes entre la ligne et datedeb
+#yield la date et la valeur
+#renvoie le nb de jours lus quand le balayage est fini (None, nbjourslus)
+#charge dans le tableau le nombre de jourd nbjours a partir du jour jour
+def readlines(datedeb, nbjours, jour,nomzip,paire):
+    fh1 = open(nomzip, 'rb')
+    z1 = zipfile.ZipFile(fh1)  # classe lisant le zipdanzs le fichier ouvert
+    nbjourslus=0
+    lstday = -1
+    with z1.open(paire + ".csv", mode='r') as read1:
+        for laligne in read1:
+            numsample, date, begin = decodeline(laligne)  # lecture de la ligne
 
-#on traite ce fichier (ca l'imprime a l'ecran)
-tab1 = generedata(nomfich, "EURUSD")
-tab2 = generedata(nomfich, "USDCHF")
+            if lstday != date.day: #la date a changé
+                if nbjourslus != 0 :  #on a commence a lire des jours
+                    nbjourslus = nbjourslus + 1  # un nouveau jour
+                else:
+                    print("jour",date.day)  #on n'a pas commence a lire des jours : on saute
 
-bin1min(tab1,tab2)
+            lstday = date.day
+
+            if date.day == jour: #on a atteint le jour recherche
+                nbjourslus = 1 #on commence
+
+            if nbjourslus > nbjours : #on a lu le bon nombre de jours
+                break #fin du for
+
+
+            if nbjourslus !=0 :
+                delta = date - datedeb  # delta depuis debut semaine
+                yield nbjourslus,date,int(delta.total_seconds()/60),begin  #date, valeur debut
+
+    fh1.close()
+
+
+
+
+
+#lit une paire pour une semaine de l'annee
+
+def lirepaire(annee, semaine,paire):
+    #calcul des mois et annee a utiliser (une semaine peut etre a cheval sur 2 mois)
+    jourdeb, moisdeb, anneedeb, jourfin, moisfin, anneefin = getnomzip(annee,semaine)  # annee est un string, week ens un nb
+
+    #lecture du mois ou ca commence
+    #regarde si le fichier existe
+    mois = "00" + int(moisdeb)
+    zipfichname = "BID" + mois + str(anneedeb) + ".zip"  # nom sur le drive
+    namzipdisk = "c:\\tmp\\" + zipfichname
+    if os.path.isfile(namzipdisk):
+        print("fichier "+namzipdisk+" retrouve")
+        nomfich = namzipdisk
+    else:
+        print("lecture fichier " + namzipdisk + " sur le drive")
+        nomfich = readgoogle(str(anneedeb),mois[:-2])
+
+    tableau=[]
+    nbjours=5
+
+    #on lit ce fichier dans le tableau (ca l'imprime a l'ecran)
+    tableau,nbjourslus = loadtableau(tableau, nbjours, jour,nomfich, paire)  #charge le tableau avec les premiers jours
+
+    #il y a un deuxieme mois a lire pour cette semaine
+    if moisfin != moisdeb:  #a cheval sur 2 mois
+        mois = "00" + int(moisfin)
+        zipfichname = "BID" + mois + str(anneefin) + ".zip"  # nom sur le drive
+        namzipdisk = "c:\\tmp\\" + zipfichname
+        if os.path.isfile(namzipdisk):
+            print("fichier " + namzipdisk + " retrouve")
+            nomfich = namzipdisk
+        else:
+            print("lecture fichier " + namzipdisk + " sur le drive")
+            nomfich = readgoogle(str(anneefin), mois[:-2])
+
+        #on lit le nouveau mois a partir du 1
+        tableau,nbjourslus = loadtableau(tableau, 5-nbjourslus, 1,nomfich, paire)  #charge le tableau avec les premiers jours
+
+    print(tableau)
+
+
+#pour test
+if __name__ == '__main__':
+
+    lirepaire(2015,38,"EURUSD")
+
+    #tab2 = generedata(nomfich, "USDCHF")
+
+    #tabx1,tabyOpen1,tabyHigh1,tabyLow1,tabyClose1 = normalise2(tab1)
+    #tabx2,tabyOpen2,tabyHigh2,tabyLow2,tabyClose2 = normalise2(tab2)
+
+    #candlestick2_ohlc(tabx1, tabyOpen1,tabyHigh1,tabyLow1,tabyClose1)
+    #candlestick2_ohlc(tabx2, tabyOpen2,tabyHigh2,tabyLow2,tabyClose2)
+
+    plt.show()
+
+    #bin1min(tab1,tab2)
 
