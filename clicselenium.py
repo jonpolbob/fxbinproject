@@ -12,6 +12,10 @@
 #selon les parametres de chrome il y a ou non un message d'alerte des cookies
 # avec firefow ca y est, avec chrome ca n'y est pas toujours
 
+#corection le 30 dec 1- : les exceptions de selenium ont changé par rapport au source d'origine (python 3 ?)
+#rajput de l'effacement des csv a la fin de la fabrication du zip pour eviter d'inclure dans le zip d'un autre mois les csv d'un mois precedent pas recupere
+
+
 __author__ = 'cagibi'
 
 from selenium import webdriver
@@ -75,9 +79,10 @@ def loadpairemoisan(paire,mois,an):
         notseen =False
         try:
            toclic.click()
-        except selenium.ElementNotVisible :
+        except selenium.common.exceptions.ElementNotVisibleException :
             notseen = True
-
+        except selenium.common.exceptions.WebDriverException :
+            notseen = True
 
 
     pathdownload = "c:/tmp/"+RealFileName #attention le nom est different entre le zip et le lien clic
@@ -108,7 +113,7 @@ def loadpairemoisan(paire,mois,an):
 
 
 
-def liremois(mois,listepairs):
+def liremois(mois,annee,listepairs):
 
     listefic = []  # liste des fichier extraits
     #on efface tous les csv du repetroire
@@ -118,24 +123,27 @@ def liremois(mois,listepairs):
 
     for pairename in listepaires :
         print ("lecture de :",pairename)
-        dezipname,fichname = loadpairemoisan(pairename, mois, "2015") #deux arguments en retrou, le 2eme est le nom actuel du fichier
-        listefic.append(fichname)
+        dezipname,fichname = loadpairemoisan(pairename, mois, annee) #deux arguments en retrou, le 2eme est le nom actuel du fichier
+        listefic.append(fichname) #liste des csv fabriques
 
     #on refusionne tout dans un zip du mois
-    zipoutname = "c:\\tmp\\"+"BID"+mois+"2015"+".zip"
+    zipoutname = "c:\\tmp\\"+"BID"+mois+annee+".zip"
     zfileout = zipfile.ZipFile(zipoutname, 'w')
     for ficname in listefic:
         print("zip :",ficname," dans", zipoutname )
         inzipname = os.path.relpath(ficname,"c:\\tmp")
         print(inzipname)
         zfileout.write(ficname,inzipname) # on ne garde qu e le nom fichier on vire le path
+        print('--- effacement de ',ficname,' ----------')
+        os.remove(ficname)
 
     zfileout.close()
     return zipoutname
 
 #ici le main
 #listemois=["01","02","03","04","05","06","07","08","09"]
-listemois=["01"]
+annee="2014"
+listemois=["01","02","03","04"]
 listepaires=["EURUSD","EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
 
 
@@ -143,5 +151,5 @@ listepaires=["EURUSD","EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBP
 if __name__ == "__main__":
     # le programme principal
     for mois in listemois:
-        liremois(mois,listepairs)
+        liremois(mois,annee, listepaires)
 
