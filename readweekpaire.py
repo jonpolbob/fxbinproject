@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
+#fichier readweekpaire contient le necessaire pour lire une semaine d'une paire dans un fichier temporaire de c:\tmp
+# paire
+
 import readgogdrive
 
 # ce fichier lit une semaine d'une paire dans un tablau
@@ -9,6 +12,7 @@ import readgogdrive
 
 import datetime
 
+############ getdimanchefromweek ###############################
 #renvoie la date du dimanche en debut de seamine (les semaines commencent un dimanche)
 def getdimanchefromweek(semaine,annee):
     d = str(annee)+"-"+str(semaine).zfill(2)+"-1"
@@ -17,6 +21,7 @@ def getdimanchefromweek(semaine,annee):
     #print(r,rp)
     return rp.year,rp.month,rp.day
 
+############ getsamedifromweek ###############################
 #renvoie le dernier jour de la semaine
 def getsamedifromweek(semaine,annee):
     d = str(annee) + "-" + str(semaine).zfill(2) + "-1"

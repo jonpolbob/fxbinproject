@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#readgogdrive : lit un mois sur le drive
+
+
+#readgogdrive : fichier contenant surtout des utilitaires de lecture des zip
+# lit un mois sur le drive
 #sauf si le zip BIDmmyy.zip est deja dans c\tmp : dans ce cas : lit le zip du tmp
 
 # 30 oct 16 : ajout de generedata qui lit un paire dans ce zip
@@ -10,6 +13,34 @@
 #il ne restera qu'un yield pour lire ligne par ligne un fichier sur le drive ou dans le tmp
 
 #il fautdar faire un include depuis aileurs
+
+
+#############################################
+#strucutre des fichiers
+
+# les fichiers sont lus a la base dans le site web
+# un fichier zip est lu, avec dedans un fichier csv avec les ticks de une paire pour un mois
+# la fonction clicselenium transfert ces donnees dans c:\tmp avec u fichier zip contenant toutes les paires pour 1 mois
+#le fichier zip s'appelle bidMMYY
+#les csv dedans ont juste le nom de la paire
+
+#ces fichier zip des ticks de plusieurs paires pour 1 mois sont expedies a la main dans le drive
+
+#readgoogle rappatrie un fichier zip (mois, annee) de googledrive dans c:\tmp
+#getnomzip permet de calculer le nom d'une fichier tmp a partir de son mois, annee
+
+#on peut creer un tableau de minutes pour tout un mois avec generedata
+#le tableau contient numsample,date,begin
+
+#on peut lire quelques jours d'un mois dans c:\tmp avec readlines(datedeb, nbjours, jour,nomzip,paire)
+#qui yield nbjourslus,date,int(delta.total_seconds()/60),begin
+# c a d : nombre de jours lus dans le fichier, date de la ligne, minute de la ligne depuis la date de debut, valeur bein
+#cette fonction est utilisee pour lire une semaine de data, eventuellement dans 2 mois successifs
+
+# c'est ce que fait readpaire : lecture d'une semaine dans une paire
+#fait appel a readlines
+
+#############################################
 
 __author__ = 'cagibi'
 
@@ -23,8 +54,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.finance import candlestick2_ohlc
 
-# ----- lit un fichier dans le drive------
-
+####### readgoogle #########################
+# ----- lit un fichier defini par son annee et son mois dans le drive------
+# gere les autorisations googledrive
+# et l'enregistre dans c:\tmp
 def readgoogle(annee,mois):
     # demarrage des autorisations google a placer avant demarrage de selenium ?
     gauth = GoogleAuth()
@@ -77,10 +110,10 @@ def readgoogle(annee,mois):
 
 # ---------- decode une ligne de fichier csv ------------------
 # renvoie
-# #le nb minutes depuis debut du mois
+# #le nb minutes depuis debut du mois (1er du mois 0:00)
 # la date
 # la valeur de begin
-def decodeline(laligne):
+def decodelinemois(laligne):
     colonnes = laligne.split(b';')
     # print (colonnes)
     ladate = colonnes[0]
@@ -103,6 +136,7 @@ def decodeline(laligne):
 
 
 #renvoie le nom de 1 ou 2 zip correspondant a cette semaine
+#positionné dans le repertoire temporaire (c:\tmp)
 #import datetime
 import time
 
@@ -112,10 +146,10 @@ def getnomzip(annee,mois): #annee est un string, week ens un nb
     nomzip = r"c:\tmp\BID"+strmois+stryear+'.zip'  #nom du fichier zip correspondant
     return nomzip
 
-
-
-#generedata
-#lit un paire dans le zip
+################# generedata ####################
+#fonction de lecture de fichier du drive ou temporaires
+# par mois entiers
+#lit une paire dans le zip nomzip
 #et le met dans un tableau
 def generedata(nomzip,paire):
     letab=[]
@@ -123,26 +157,31 @@ def generedata(nomzip,paire):
     z1 = zipfile.ZipFile(fh1)  # classe lisant le zipdanzs le fichier ouvert
     with z1.open(paire+".csv", mode='r') as read1:
         for laligne in read1 :
-            numsample,date,begin = decodeline(laligne) # lecture de la ligne
+            numsample,date,begin = decodelinemois(laligne) # lecture de la ligne et calcule minute depuis debut du mois
             letab.append([float(numsample),begin])
     fh1.close()
 
-    # generedata
-    # le zip ligne par ligne avec un yield
+
+    ###################  getlinemoispaire #####################
+    # lit ligne par ligne dans le zip d'un mois pour une paire
+    # ligne par ligne avec un yield
     # retourn None,None,None a la fin
+    #retourne numeroechantillon (= nb min depuis debut mois), date, valeur de debut
     def getlinemoispaire(nomzip, paire):
         letab = []
         fh1 = open(nomzip, 'rb')
         z1 = zipfile.ZipFile(fh1)  # classe lisant le zipdanzs le fichier ouvert
         with z1.open(paire + ".csv", mode='r') as read1:
             for laligne in read1:
-                numsample, date, begin = decodeline(laligne)  # lecture de la ligne
+                numsample, date, begin = decodelinemois(laligne)  # lecture de la ligne et nb mins depuis debut du mois
                 yield numsample, date, begin
         fh1.close()
         return None,None,None
 
-
-#fonction decodant le temps datetime pour en faire un temps jour heure minute jour de la semaine utile pour les graphs du mois
+################### decodetime ###############################
+#fonction decodant le temps datetime pour en faire un quadruplet
+# jour heure minute jour de la semaine
+# utile pour les graphs du mois
 def decodetime(time):
     letuple = time.timetuple()
 
@@ -154,68 +193,14 @@ def decodetime(time):
 
 
 
-#fonction de normalisation
-#normalisation premier mode : on prend les 50 dernieres valeurs et on en fait la moyenne -> ce sera la moyenne
-#on ne noermalise par l'ecart type
-#recoit un tableau en entree
-
-def normalise2(tabin):
-    localstackX=[]
-    localstackY = []
-    outtabX=[]
-    outtabY = []
-    lasttime = 0
-    ledeb = None
-    outtabYdeb = []
-    outtabYfin = []
-    outtabYmin = []
-    outtabYmax = []
-
-    for laline in tabin:
-        if ledeb == None: #premiere ligne = on int la candle
-            ledeb = laline[1]
-            lemin = laline[1]
-            lemax = laline[1]
-            lasttime = laline[0]
-
-        if laline[0] == lasttime: #meme heure on met a jour les vleurs de la candle
-            lemax = max(lemax,laline[1])
-            lemin = min(lemax,laline[1])
-            lafin = laline[1]
-        else : #changement d'heure : on normalise le candle et on genere la sortie
-            #on empile la nouvelle valeur pour le calcul des moyennes
-            lamediane = (ledeb + lafin)/2
-            if len(localstackY) > 30: #il y a assez de valeurs
-                moyenne = sum(localstackY) / len(localstackY)  # le stack avant la candle
-                # localstackX.remove(localstack[0])
-                localstackY.remove(localstackY[0])
-
-            # localstackX.append(laline[0])
-            localstackY.append(lamediane) #la pile est pleine de medianes
-
-            #on enregistre la candle
-            if len(localstackY) > 30:  # il y a assez de valeurs : on fait une candle normalisee
-                outtabX.append(laline[0])
-                outtabYdeb.append(ledeb  - lamediane)
-                outtabYfin.append(lafin - lamediane)
-                outtabYmax.append(lemax - lamediane)
-                outtabYmin.append(lemin - lamediane)
-
-            #on init la prochaine candle
-            ledeb = laline[1]
-            lemin = laline[1]
-            lemax = laline[1]
-            lafin = laline[1]
-            lasttime = laline[0]
-
-    return outtabX, outtabYdeb, outtabYmax, outtabYmin, outtabYfin
-
 
 # -----------------PAR ICI LE MAIN ----------------------------
 import os.path
 
-
-#lit nbjours du nom de fichier a partir du jour du mois =  jour
+################## readlines ####################
+# : lecture de qq jous dans un fichier mois
+#lit nbjours dans un fichier csv contenant le mois pour une paire
+# a partir du jour du mois =  jour
 #ligne par ligne
 #renvoie le nb de minutes entre la ligne et datedeb
 #yield la date et la valeur
@@ -228,7 +213,7 @@ def readlines(datedeb, nbjours, jour,nomzip,paire):
     lstday = -1
     with z1.open(paire + ".csv", mode='r') as read1:
         for laligne in read1:
-            numsample, date, begin = decodeline(laligne)  # lecture de la ligne
+            numsample, date, begin = decodelinemois(laligne)  # lecture de la ligne
 
             if lstday != date.day: #la date a changé
                 if nbjourslus != 0 :  #on a commence a lire des jours
@@ -253,54 +238,11 @@ def readlines(datedeb, nbjours, jour,nomzip,paire):
 
 
 
-
-
-#lit une paire pour une semaine de l'annee
-
-def lirepaire(annee, semaine,paire):
-    #calcul des mois et annee a utiliser (une semaine peut etre a cheval sur 2 mois)
-    jourdeb, moisdeb, anneedeb, jourfin, moisfin, anneefin = getnomzip(annee,semaine)  # annee est un string, week ens un nb
-
-    #lecture du mois ou ca commence
-    #regarde si le fichier existe
-    mois = "00" + int(moisdeb)
-    zipfichname = "BID" + mois + str(anneedeb) + ".zip"  # nom sur le drive
-    namzipdisk = "c:\\tmp\\" + zipfichname
-    if os.path.isfile(namzipdisk):
-        print("fichier "+namzipdisk+" retrouve")
-        nomfich = namzipdisk
-    else:
-        print("lecture fichier " + namzipdisk + " sur le drive")
-        nomfich = readgoogle(str(anneedeb),mois[:-2])
-
-    tableau=[]
-    nbjours=5
-
-    #on lit ce fichier dans le tableau (ca l'imprime a l'ecran)
-    tableau,nbjourslus = loadtableau(tableau, nbjours, jour,nomfich, paire)  #charge le tableau avec les premiers jours
-
-    #il y a un deuxieme mois a lire pour cette semaine
-    if moisfin != moisdeb:  #a cheval sur 2 mois
-        mois = "00" + int(moisfin)
-        zipfichname = "BID" + mois + str(anneefin) + ".zip"  # nom sur le drive
-        namzipdisk = "c:\\tmp\\" + zipfichname
-        if os.path.isfile(namzipdisk):
-            print("fichier " + namzipdisk + " retrouve")
-            nomfich = namzipdisk
-        else:
-            print("lecture fichier " + namzipdisk + " sur le drive")
-            nomfich = readgoogle(str(anneefin), mois[:-2])
-
-        #on lit le nouveau mois a partir du 1
-        tableau,nbjourslus = loadtableau(tableau, 5-nbjourslus, 1,nomfich, paire)  #charge le tableau avec les premiers jours
-
-    print(tableau)
-
-
 #pour test
 if __name__ == '__main__':
+    print("rien a faire")
 
-    lirepaire(2015,38,"EURUSD")
+    #lirepaire(2015,38,"EURUSD") NE PLUS UTILISER, cf readweekpaire.py
 
     #tab2 = generedata(nomfich, "USDCHF")
 
@@ -310,7 +252,7 @@ if __name__ == '__main__':
     #candlestick2_ohlc(tabx1, tabyOpen1,tabyHigh1,tabyLow1,tabyClose1)
     #candlestick2_ohlc(tabx2, tabyOpen2,tabyHigh2,tabyLow2,tabyClose2)
 
-    plt.show()
+    #plt.show()
 
     #bin1min(tab1,tab2)
 

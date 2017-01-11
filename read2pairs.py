@@ -3,9 +3,8 @@
 
 __author__ = 'cagibi'
 
-
+# read2Pairs utilitaires pour lire 2 paires a la fois
 # lit 2 paires et les apparie minute par minute
-
 
 nomrep = "G:\\stockage\\fxdata\\"
 
@@ -44,7 +43,7 @@ def decodeline(laligne):
 
 import zipfile
 
-def readfile(mois, annee, paire1A,paire1B, paire2A,paire2B)
+def readfile(mois, annee, paire1A,paire1B, paire2A,paire2B):
 
     # extrait le fichier de data de dedans le zip
     #nomzip1, nomfich1 = gennomfichzip(2, 2014, "eur", "usd")
