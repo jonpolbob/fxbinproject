@@ -67,6 +67,8 @@ def readweek(week,year,paire):
 
 
 #renvoie un tableau de candles a la place d'un tableau de ticks
+# au format candlestick_ohlc
+
 def candelize(tableau):
     tabout=[]
     valeur = tableau[0][2]
@@ -81,7 +83,7 @@ def candelize(tableau):
         curidx = line[0]
         valeur = line[2]
         if curidx != lstidx:  #changement de minute
-            tabout.append([lstidx,valopen,valclose,valhi,vallo]) #ds tableau sortie
+            tabout.append([lstidx,valopen,valhi,vallo,valclose]) #ds tableau sortie
             valopen = valeur  # valeur entree
             vallo = valeur # valeur mini
             valhi = valeur # valeur max
