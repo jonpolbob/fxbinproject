@@ -51,9 +51,8 @@ upband,dnband = calculsframe.calcbolinger(pdtable,index)
 
 upbandarray = np.array(upband)
 #2eme arg = position Y ou mettre la marque
-marksX,marksY = calculsframe.detectinteressant(pdtable,upbandarray) #2eme col = high
-
-
+marksX= calculsframe.detectinteressant(pdtable) #2eme col = high
+#marksY=upband[marksX] #liste des valeurs dont l'index est dans markx
 
 
 # Plot two charts to assess trades and equity curve
@@ -63,8 +62,7 @@ ax1 = fig.add_subplot(211, ylabel='Price in $')
 
 #plot les marks
 marker_style = dict(color='cornflowerblue', marker='v',
-                    markersize=2, linestyle='None', markerfacecoloralt='gray')
-
+                    markersize=4, linestyle='None', markerfacecoloralt='gray')
 
 
 
@@ -75,6 +73,21 @@ marker_style = dict(color='cornflowerblue', marker='v',
 candlestick_ohlc(ax1, tabcandle, width=.8,colorup='#53c156', colordown='#ff1717')
 ax1.plot(index,upband,'^', ls='-', markersize=1, color='m')
 ax1.plot(index,dnband,'^', ls='-', markersize=1, color='g')
-ax1.plot(marksX,marksY,**marker_style)
+ax1.plot(marksX,upband[marksX],**marker_style)
 plt.show()
+
+
+
+#ici il reste a generer le tbaleau des features
+#les arguments du tableau des features sont pour l'instant les bandes et les boliing
+#il faut generer un tableau avec features positives et features negatives
+def generefeatures(marksX,tabcandle,upband,dnband):
+    
+
+
+featurestab = generefeatures(marksX,tabcandle,upband,dnband)
+
+
+
+
 

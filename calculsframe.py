@@ -19,11 +19,11 @@ def calcbolinger(pdtable,index):#calcul de bolinger
 
 
 #detecte une zone interessante dans un dataframe de candle
-#sort une de 0 avec un 1 sur les points interessants
+#sort une liste des index qui marchent
 #super bourrin pour que ca marche
 #pdtable est une table panda a 1 colonne
 
-def detectinteressant(pdtable,ypos): #calcul de bolinger
+def detectinteressant(pdtable): #calcul de bolinger
     lafifo =[]
     resuX=[]
     resuY = []
@@ -55,9 +55,9 @@ def detectinteressant(pdtable,ypos): #calcul de bolinger
             #donc c'est ok
             if Found: #on affichera une marque devant le debut
                 resuX.append(idxdeb)
-                resuY.append(ypos[idxdeb]) #position = upperband passee en argumlent
+                #resuY.append(ypos[idxdeb]) #position = upperband passee en argumlent
 
-    return resuX,resuY
+    return resuX
 
 
 
