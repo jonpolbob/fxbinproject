@@ -16,10 +16,15 @@ def calculfeatures(revfifo):
     #plt.plot()
     #plt.show()
 
+
+def clearfifo():
+    global fifo
+    fifo=[]
+
 # ici il reste a generer le tableau des features
 # les arguments du tableau des features sont pour l'instant les bandes et les boliing
 # il faut generer un tableau avec features positives et features negatives
-def generefeatures(marksX, tabcandle, upband, dnband):
+def generefeatures(tablein, marksX, tabcandle, upband, dnband):
     global fifo
     for values in zip(tabcandle,upband,dnband):
         #on met tout dans une seule liste
@@ -43,4 +48,7 @@ def generefeatures(marksX, tabcandle, upband, dnband):
         revfifo = list(reversed(fifo))  #liste contenant a fifo inversee (0 = derniere valeur avant evenement)
         featureslist = calculfeatures(revfifo)
 
+        tablein.append(featureslist)
+
+    return tablein
 
