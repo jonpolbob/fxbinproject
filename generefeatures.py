@@ -13,11 +13,10 @@ def calculfeatures(revfifo):
     for value in revfifo:
         todraw.append(value[1:])
 
+    #plt.plot()
+    #plt.show()
 
-    plt.plot()
-    plt.show()
-
-# ici il reste a generer le tbaleau des features
+# ici il reste a generer le tableau des features
 # les arguments du tableau des features sont pour l'instant les bandes et les boliing
 # il faut generer un tableau avec features positives et features negatives
 def generefeatures(marksX, tabcandle, upband, dnband):
@@ -30,7 +29,7 @@ def generefeatures(marksX, tabcandle, upband, dnband):
 
         print(candle)
         fifo.append(candle)
-        #print (fifo)
+        #print (fifo
 
         if len(fifo)>20:
             fifo.pop(0) #on vire le plus ancien
