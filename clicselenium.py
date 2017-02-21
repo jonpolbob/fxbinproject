@@ -142,8 +142,8 @@ def liremois(mois,annee,listepairs):
 
 #ici le main
 #listemois=["01","02","03","04","05","06","07","08","09"]
-annee="2014"
-listemois=["01","02","03","04"]
+annee="2015"
+listemois=["06","09","10","11","12"]
 listepaires=["EURUSD","EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
 
 
