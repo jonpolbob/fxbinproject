@@ -34,7 +34,6 @@ driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
 
 driver.set_page_load_timeout(30)
 
-
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
 
@@ -97,16 +96,29 @@ def loadpairemoisan(paire,mois,an):
     # on cherche dans le zip un fichier csv
     #on le decompress dans tmp
     #puis on enleve le zip
-    zf = zipfile.ZipFile(pathdownload, 'r')
-    print (zf.filelist)
-    for i in zf.filelist:
-        if i.filename.find(".csv") != -1 :
-            print("extract dans c:\\tmp : ",i.filename)
-            newpath = zf.extract(i,path="c:/tmp")
-            print(newpath)
-            os.rename(newpath,"c:\\tmp\\"+paire+".csv")
+    notok = True
 
-    zf.close()
+    while notok:
+        try:
+            with zipfile.ZipFile(pathdownload, 'r') as zf:
+                print (zf.filelist)
+                for i in zf.filelist:
+                    if i.filename.find(".csv") != -1 :
+                        print("extract dans c:\\tmp : ",i.filename)
+                        newpath = zf.extract(i,path="c:/tmp")
+                        print('new path ',newpath, 'rename to',"c:\\tmp\\"+paire+".csv")
+                        os.rename(newpath,"c:\\tmp\\"+paire+".csv")
+                        notok = False
+
+                zf.close()
+
+        except PermissionError:
+            #zf.close()
+            if os._exists("c:\\tmp\\" + paire + ".csv"):
+                os.remove("c:\\tmp\\" + paire + ".csv")
+            print('redo')
+
+
     os.remove(pathdownload)
 
     return newpath,"c:\\tmp\\"+paire+".csv"
@@ -143,7 +155,7 @@ def liremois(mois,annee,listepairs):
 #ici le main
 #listemois=["01","02","03","04","05","06","07","08","09"]
 annee="2015"
-listemois=["06","09","10","11","12"]
+listemois=["01"] #,"03","04","05","06","07","08","09","10","11","12"]
 listepaires=["EURUSD","EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
 
 
