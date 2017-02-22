@@ -52,3 +52,12 @@ def generefeatures(tablein, marksX, tabcandle, upband, dnband):
 
     return tablein
 
+def extracteventsdata(semaine, featurestab, marksX, tabcandle, upband, dnband):
+    for numidx in marksX:
+        eventdata=[semaine,numidx]
+        for curidx in range(numidx-10,numidx+10):
+            eventdata.append([tabcandle[curidx],upband[curidx],dnband[curidx]])
+
+        featurestab.append(eventdata)
+
+    return featurestab
