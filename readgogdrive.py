@@ -58,6 +58,7 @@ from matplotlib.finance import candlestick2_ohlc
 # ----- lit un fichier defini par son annee et son mois dans le drive------
 # gere les autorisations googledrive
 # et l'enregistre dans c:\tmp
+#annee et mois sont des string
 def readgoogle(annee,mois):
     # demarrage des autorisations google a placer avant demarrage de selenium ?
     gauth = GoogleAuth()
@@ -241,6 +242,8 @@ def readlines(datedeb, nbjours, jour,nomzip,paire):
 #pour test
 if __name__ == '__main__':
     print("rien a faire")
+
+    readgoogle('2015','10')
 
     #lirepaire(2015,38,"EURUSD") NE PLUS UTILISER, cf readweekpaire.py
 
