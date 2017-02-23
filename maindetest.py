@@ -106,25 +106,28 @@ for semaine in range(semainedeb,semainefin):
     #featurestab = generefeatures.generefeatures(semaine,featurestab,marksX,tabcandle,upband,dnband)
 
 
-fig = plt.figure()
-fig.patch.set_facecolor('white')  # Set the outer colour to white
-ax1 = fig.add_subplot(211, ylabel='Price in $')
 
 #eventstab contient semaine, idx, [[candle-i],up-i,dn-i],[[candle-(i-1)],up-i,dn-(i-1)]
 #pour avoir les candle : il faut un tableau ligne[2:22][0]
 
 for ligne in eventstab :
     print(ligne)
+    fig = plt.figure()
+    fig.patch.set_facecolor('white')  # Set the outer colour to white
+    ax1 = fig.add_subplot(211, ylabel='Price in $')
 
     tabdata = np.array(ligne[2:22]) #tableau des 20 datas
 
     petitcandle = []
+    toto = tabdata[:,0]
 
-    for idx,candle in range[-10,10],tabdata[:][0][1:3]: #contient un index + les candles de -10 a 10
-        petitcandle.append(zip([idx],candle)) #liste concatenant l'index et les candles
+    for idx,candle in zip(range(-10,10),toto): #contient un index + les candles de -10 a 10
+        truc=candle[1:]
+        eut = [idx]
+        eut.extend(truc)
+        petitcandle.append(eut) #liste concatenant l'index et les candles
     candlestick_ohlc(ax1, petitcandle, width=.8, colorup='#53c156', colordown='#ff1717')
     #ax1.plot(index, upband[], '^', ls='-', markersize=1, color='m')
     #ax1.plot(index, dnband, '^', ls='-', markersize=1, color='g')
     #ax1.plot(marksXpos, upband[marksX], **marker_style)
     plt.show()
-
