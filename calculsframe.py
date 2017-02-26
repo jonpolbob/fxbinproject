@@ -2,8 +2,24 @@ import pandas as pd
 import numpy as np
 
 # toutes sortes de calculs sur le dataframe
+#calcul des bolinger doubles
+def calcbolingerreduced(pdtable):#calcul de bolinger
+    length=30
+    hinumsd=1.9
+    lownumsd = 1.5
 
-def calcbolinger(pdtable,index):#calcul de bolinger
+    ave = pdtable[2].rolling(center=True,window=30).mean()
+    #sd = pd.stats.moments.rolling_std(pdtable,length)
+    sd = pdtable[2].rolling(center=True,window=30).std()
+    upband = ave + (sd*hinumsd)
+    dnband = ave - (sd*hinumsd)
+    upband80 = ave + (sd * lownumsd)  #80% de bollinger
+    dnband80 = ave - (sd * lownumsd)
+
+    return upband,dnband,upband80,dnband80
+
+#calcul des bolinger normaux
+def calcbolinger(pdtable):#calcul de bolinger
     length=30
     numsd=2.0
 
@@ -12,8 +28,17 @@ def calcbolinger(pdtable,index):#calcul de bolinger
     sd = pdtable[2].rolling(center=True,window=30).std()
     upband = ave + (sd*numsd)
     dnband = ave - (sd*numsd)
+
     return upband,dnband
 
+def calcmm80(pdtable):#calcul de bolinger
+    length=80
+    numsd=2.0
+
+    ave = pdtable[2].rolling(center=True,window=length).mean()
+    #sd = pd.stats.moments.rolling_std(pdtable,length)
+    #sd = pdtable[2].rolling(center=True,window=30).std()
+    return ave
 
 
 
@@ -81,9 +106,54 @@ def checkfifo1(lafifo):
     return True and idxdeb > 10,idxdeb
 
 
+def detectinteressantboll(pdtable,curves):
+    bolhi = curves[0]
+    bollo = curves[1]
+    bolhiba = curves[2]
+    bollohi = curves[3]
+    moy80 = curves[4]
+
+    resuX=[] #tableau des index
+    resuY=[]   #tableau des seuils ok
+    resuZ = [] #tableau des seuils stop
+    count=0
+
+    for idx,lacandle in pdtable.iterrows():
+        linelist = lacandle.values.tolist()
+        found = True
+        open = linelist[0] #open
+        close = linelist[3] #close
+        bollhimax = bolhi[idx]
+        bollhimin = bolhiba[idx]
+        mmval = moy80[idx]
+        if (mmval < bollohi[idx]): #moyenne en dessous de bollinger bas
+            found =False
+        if (mmval > bolhiba[idx]): #moyenne en dessous de bollinger bas
+            found =False
+
+        if open <= bollhimin:  #commence en dessous de bol hi bas : pas bon
+            found=False
+        if close >= bollhimin:  # finit au dessus de bol hi bas : pas bon
+            found = False
+
+        if found:
+            resuX.append(idx)
+            resuY.append(mmval)
+            resuZ.append(bollhimax)
+            count = count + 1
+
+    return resuX,resuY,resuZ,count
+
 #fait la liste des points interessants
 # on sort un tableau contenant les index des points interessants
-def detectinteressant(pdtable): #calcul de bolinger
+def detectinteressant(pdtable,curves): #calcul de bolinger
+#    return detectinteressant0(pdtable)
+    return detectinteressantboll(pdtable,curves)
+
+#detectinteessant sur une fifo de 10
+
+
+def detectinteressant0(pdtable):
     lafifo =[]
     resuX=[]
     resuY = []

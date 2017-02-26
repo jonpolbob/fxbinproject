@@ -40,7 +40,7 @@ def readweek(week,year,paire):
     deby,debm,debd = getdimanchefromweek(week,year)  # date debut de semaine
     datedeb = datetime.datetime(deby,debm,debd,hour=17) #demarre le dimanche a 17h
     finy, finm, find = getsamedifromweek(week,year)   # mois fin semaine
-    print(deby,debm,debd,finy,finm)
+    print("lecture mois" , deby,debm,debd," jusqu'a", finy,finm)
 
     for laligne in readgogdrive.readlines(datedeb,6, debd, readgogdrive.getnomzip(deby,debm),paire):
            nbjourslus = laligne[0]
@@ -55,7 +55,9 @@ def readweek(week,year,paire):
     toread = 6-nbjourslus
 
     if toread != 0: #on lit les jours suivants a partir du 1er du mois
-        for laligne in readgogdrive.readlines(datedeb,toread, 1, readgogdrive.getnomzip(finy,finm),paire):
+        datedeb2 =  datetime.datetime(finy,finm,1,hour=0) #demarre le 1 du mois suivant a 0h
+
+        for laligne in readgogdrive.readlines(datedeb2,toread, 1, readgogdrive.getnomzip(finy,finm),paire):
                 print (laligne)
                 # 0 = nbjourslus
                 # 1 : datetime avec la date

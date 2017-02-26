@@ -215,7 +215,8 @@ def readlines(datedeb, nbjours, jour,nomzip,paire):
     with z1.open(paire + ".csv", mode='r') as read1:
         for laligne in read1:
             numsample, date, begin = decodelinemois(laligne)  # lecture de la ligne
-
+            if (date.month != datedeb.month):  #bug : parfois le 1 er jour du mois est ds le mois prec
+                continue
             if lstday != date.day: #la date a changé
                 if nbjourslus != 0 :  #on a commence a lire des jours
                     nbjourslus = nbjourslus + 1  # un nouveau jour
