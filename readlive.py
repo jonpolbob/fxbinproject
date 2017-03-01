@@ -5,10 +5,11 @@ import requests
 page = requests.get('https://www.dailyfx.com/forex-rates')
 #for e in page:
 #    print(e)
-
+text_file = open(r"c:\tmp\Output.txt", "wb")
+text_file.write(page.content)
+text_file.close()
 
 tree = html.fromstring(page.content)
-truc = tree.xpath("//span[@class]")
 
 
 #eurusdvalue = tree.xpath('//tr[@id="EURUSD"]') #execute une instruction xpath pour trouve le truc

@@ -221,7 +221,7 @@ def readlines(datedeb, nbjours, jour,nomzip,paire):
                 if nbjourslus != 0 :  #on a commence a lire des jours
                     nbjourslus = nbjourslus + 1  # un nouveau jour
                 else:
-                    print("jour",date.day)  #on n'a pas commence a lire des jours : on saute
+                    print("\rjour",date.day,)  #on n'a pas commence a lire des jours : on saute
 
             lstday = date.day
 

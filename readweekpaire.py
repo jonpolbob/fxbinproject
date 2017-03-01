@@ -44,7 +44,7 @@ def readweek(week,year,paire):
 
     for laligne in readgogdrive.readlines(datedeb,6, debd, readgogdrive.getnomzip(deby,debm),paire):
            nbjourslus = laligne[0]
-           print (laligne)
+           # (laligne)
            #0 = nbjourslus
            #1 : datetime avec la date
            #2 = nb libutes depuis dimanche soir
@@ -58,7 +58,7 @@ def readweek(week,year,paire):
         datedeb2 =  datetime.datetime(finy,finm,1,hour=0) #demarre le 1 du mois suivant a 0h
 
         for laligne in readgogdrive.readlines(datedeb2,toread, 1, readgogdrive.getnomzip(finy,finm),paire):
-                print (laligne)
+                #print (laligne)
                 # 0 = nbjourslus
                 # 1 : datetime avec la date
                 # 2 = nb libutes depuis dimanche soir
