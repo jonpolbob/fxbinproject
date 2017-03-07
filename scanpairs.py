@@ -8,10 +8,28 @@ import ntplib,datetime
 import time
 import threading
 
+import interactgraf
+
+from ctypes import *
+
+class COORD(Structure):
+    pass
+
+COORD._fields_ = [("X", c_short), ("Y", c_short)]
+
+STD_OUTPUT_HANDLE = -11
+h = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+
 
 pairs = ["eurusd", "usdjpy", "audusd", "gbpusd", "usdcad", "nzdusd", "audcad", "audchf", "audjpy", "eurchf", "eurgbp",
          "eurjpy", "usdchf"]
 
+trackpaire = "eurusd"
+valcible =0
+valcancel =0
+SellOrBy=False
+affich=1
+lstval = 0
 
 opval = []
 clval = []
@@ -42,9 +60,10 @@ def initcandle(paire,date):
     global maxval
     global minval
     global ladate
+    global affich
 
     idx = pairs.index(paire)
-    if (opval != -1): #il y a des valeurs
+    if (affich==1 and opval != -1): #il y a des valeurs
         print(paire," ",ladate[idx].hour,":",ladate[idx].minute,':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',clval[idx])
 
     ladate[idx] = date
@@ -75,6 +94,11 @@ def candlelize(paire,valeur):
 
 def scanweb(timeout):
     global pairs
+    global valcible
+    global valcancel
+    global SellOrBy
+    global h,affich
+    global lstval
 
     # personalisation des options(rep de download et adresse vers chromdriver
     options = webdriver.ChromeOptions()
@@ -107,6 +131,8 @@ def scanweb(timeout):
 
 
     while Encore:
+        windll.kernel32.SetConsoleCursorPosition(h, COORD(1, 15))
+
         debclock = time.clock()
         ladate = datetime.datetime.now() #.getnow() #datetime.utcfromtimestamp(x.request('europe.pool.ntp.org').tx_time)
         if ladate.minute != lstmin:
@@ -115,12 +141,15 @@ def scanweb(timeout):
             lstmin = ladate.minute
             print(" -- ", ladate.hour, ":", ladate.minute, ":", ladate.second)
 
+
         for idx,lapaire in enumerate(pairs):
             towrite =0
             id=lapaire+"-priceBid"
             valeurbid = driver.find_element_by_id(id)
             if valeurbid == None:
                 continue
+            if (valeurbid.text == '---'):
+               continue
             valbid=float(valeurbid.text)
             if (valbid != lstvalbid[idx]):
                 towrite = 1
@@ -132,13 +161,33 @@ def scanweb(timeout):
             valeurask = driver.find_element_by_id(id)
             if valeurask == None:
                 continue
+            if (valeurask.text == '---'):
+                continue
+
             valask = float(valeurask.text)
             if (valask != lstvalask[idx]):
                 towrite = 1
                 lstvalask[idx] = valask
-                #candlelize(lapaire, valbid)on candlelize sur le ask
+                if (trackpaire == lapaire):
+                    lstval=valask
+                    interactgraf.update2(valask)
+                    if (SellOrBy):
+                        if (valask > valcancel):
+                            print("CANCEL")
 
-            if towrite != 0 :
+                        if (valask < valcible):
+                            print("ACCEPT")
+
+                    else:
+                        if (valask > valcible):
+                            print("ACCEPT")
+
+                        if (valask  < valcancel):
+                            print("CANCEL")
+
+                        #candlelize(lapaire, valbid)on candlelize sur le ask
+
+            if (affich ==1 and towrite != 0 ):
                 print(" lapaire :", lapaire,r"/", valbid,"/",valask)
 
         finclock = time.clock()
@@ -162,11 +211,93 @@ class webThread(threading.Thread):
     def run(self):
         scanweb(120)
 
+import colorama  #pour emulation terminal ansi
 
+#pour xy positionnement console
 
 
 initall()
 lethread = webThread(1,"scanthread",1)
 lethread.start()
-a=input("stop?")
+Command=1
+
+import sys
+import os
+import msvcrt
+import time
+
+
+while Command !=0:
+
+    os.system('cls')
+    windll.kernel32.SetConsoleCursorPosition(h, COORD(1, 1))
+
+    print("s: seuil reject",valcancel)
+    print("a: seuil accept",valcible)
+    print("x: achat/vente","Sell" if SellOrBy else "Buy")
+
+    print("p: paire track (",trackpaire,")")
+
+    interactgraf.update2(lstval)
+    affich = 1
+    a=""
+    print("cmd?")
+    while a=="":
+        if msvcrt.kbhit():
+            a=input()
+        else:
+            interactgraf.updategraph(valcible,valcancel)
+        time.sleep(0.1)
+
+    affich=0
+    os.system('cls')
+    if a=='q':
+        Command=0
+
+    try:
+
+        if a=='s':
+            print ('cancel=',valcancel)
+            a = input ("nouveau seuil ?")
+            if a=="":
+                continue
+            valcancel = float(a)
+
+        if a == 'a':
+            print('accept=',valcible)
+            if (SellOrBy):
+                a = input("nouveau seuil ARRET (min) ?")
+            else:
+                a = input("nouveau seuil VALID (max) ?")
+
+            if a == "":
+                continue
+
+            valcible = float(a)
+
+    except ValueError:
+        continue
+
+    if a == 'x':
+        print('Sell/Buy=',)
+        if (SellOrBy):
+            print('sell')
+        else:
+            print('buy')
+        a = input("nouveau sens (s/b)?")
+        if a=='s':
+            SellOrBy =True
+        if a == 'b':
+            SellOrBy = False
+
+    if a=='p':
+        for index,current in enumerate(pairs):
+            print(index,":",current)
+
+        a = input("paire ?")
+        if a == "":
+            continue
+        trackpaire = pairs(int(a))
+
+
 
