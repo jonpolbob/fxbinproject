@@ -45,7 +45,7 @@ def initcandle(paire,date):
 
     idx = pairs.index(paire)
     if (opval != -1): #il y a des valeurs
-        print(paire," ",ladate[idx],':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',minval[idx])
+        print(paire," ",ladate[idx].hour,":",ladate[idx].minute,':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',clval[idx])
 
     ladate[idx] = date
     opval[idx] = -1
@@ -109,10 +109,11 @@ def scanweb(timeout):
     while Encore:
         debclock = time.clock()
         ladate = datetime.datetime.now() #.getnow() #datetime.utcfromtimestamp(x.request('europe.pool.ntp.org').tx_time)
-        if ladate.min != lstmin:
+        if ladate.minute != lstmin:
             for paire in pairs:
-                initcandle(paire,datetime)
-            lstmin = ladate.min
+                initcandle(paire,ladate)
+            lstmin = ladate.minute
+            print(" -- ", ladate.hour, ":", ladate.minute, ":", ladate.second)
 
         for idx,lapaire in enumerate(pairs):
             towrite =0
@@ -138,7 +139,7 @@ def scanweb(timeout):
                 #candlelize(lapaire, valbid)on candlelize sur le ask
 
             if towrite != 0 :
-                print(ladate.hour, ":", ladate.minute, ":", ladate.second, " lapaire :", id, "valeur:", paire,r"/", valeurask.text)
+                print(" lapaire :", lapaire,r"/", valbid,"/",valask)
 
         finclock = time.clock()
         duration = finclock-debclock

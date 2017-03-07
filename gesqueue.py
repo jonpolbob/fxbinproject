@@ -22,14 +22,16 @@ def runqueue():
         minuteindex = Newval[2]
         candle=Newval[2]
 
-import MySQLdb
+import sqlite3
 
 db=None
 #gestion sql
 def initsql(listtables):
-    public db
-    db = MySQLdb.connect("localhost", "testuser", "test123", "TESTDB")
+    db = sqlite3.connect("paires.db")
     for paire in listtables:
+        c = db.cursor()
+        c.execute('''CREATE TABLE tab_'+paire+'
+                     (idx text, date text, op real, hi real, low real, cl real)''')
         nomtable="tab_"+paire
 
 
