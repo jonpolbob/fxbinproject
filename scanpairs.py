@@ -104,6 +104,7 @@ def scanweb(timeout):
     options = webdriver.ChromeOptions()
     prefs = {"download.default_directory": "c:/tmp"}
     options.add_experimental_option("prefs", prefs)
+    options.add_argument("headless");
     chromedriver = "c:/windows/system32/chromedriver.exe"
     driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
     driver.set_page_load_timeout(timeout)
@@ -170,6 +171,8 @@ def scanweb(timeout):
                 lstvalask[idx] = valask
                 if (trackpaire == lapaire):
                     lstval=valask
+                    windll.kernel32.SetConsoleCursorPosition(h, COORD(1, 6))
+                    print("current : ", lstval, " cmd?")
                     interactgraf.update2(valask)
                     if (SellOrBy):
                         if (valask > valcancel):
@@ -241,7 +244,8 @@ while Command !=0:
     interactgraf.update2(lstval)
     affich = 1
     a=""
-    print("cmd?")
+    windll.kernel32.SetConsoleCursorPosition(h, COORD(1, 6))
+    print("current : ",lstval," cmd?")
     while a=="":
         if msvcrt.kbhit():
             a=input()
@@ -297,7 +301,7 @@ while Command !=0:
         a = input("paire ?")
         if a == "":
             continue
-        trackpaire = pairs(int(a))
+        trackpaire = pairs[int(a)]
 
 
 
