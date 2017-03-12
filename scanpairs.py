@@ -1,24 +1,15 @@
-from selenium import webdriver
-import selenium
-import win32gui
+import readwebwindows
+import winconsole
+
 import re
 import os
-import zipfile
-import ntplib,datetime
 import time
+import zipfile
+import datetime
 import threading
 
 import interactgraf
-
-from ctypes import *
-
-class COORD(Structure):
-    pass
-
-COORD._fields_ = [("X", c_short), ("Y", c_short)]
-
-STD_OUTPUT_HANDLE = -11
-h = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+import timserver
 
 
 pairs = ["eurusd", "usdjpy", "audusd", "gbpusd", "usdcad", "nzdusd", "audcad", "audchf", "audjpy", "eurchf", "eurgbp",
@@ -64,7 +55,7 @@ def initcandle(paire,date):
 
     idx = pairs.index(paire)
     if (affich==1 and opval != -1): #il y a des valeurs
-        print(paire," ",ladate[idx].hour,":",ladate[idx].minute,':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',clval[idx])
+        winconsole.Xprint(paire," ",ladate[idx].hour,":",ladate[idx].minute,':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',clval[idx])
 
     ladate[idx] = date
     opval[idx] = -1
@@ -91,7 +82,8 @@ def candlelize(paire,valeur):
 
     return
 
-
+#fonction du thread
+#lit les valeurs du web. quand une valeur change -> on met a jour la liste des valeurs
 def scanweb(timeout):
     global pairs
     global valcible
@@ -100,16 +92,9 @@ def scanweb(timeout):
     global h,affich
     global lstval
 
-    # personalisation des options(rep de download et adresse vers chromdriver
-    options = webdriver.ChromeOptions()
-    prefs = {"download.default_directory": "c:/tmp"}
-    options.add_experimental_option("prefs", prefs)
-    options.add_argument("headless");
-    chromedriver = "c:/windows/system32/chromedriver.exe"
-    driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
-    driver.set_page_load_timeout(timeout)
-    URL = "https://www.dailyfx.com/forex-rates"
+    driver = readwebwindows.init()   # a modifier pour linux
 
+    URL = "https://www.dailyfx.com/forex-rates"
     driver.get(URL)
 
     Encore=True
@@ -126,23 +111,26 @@ def scanweb(timeout):
         opval.append(-1)
         clval.append(-1)
 
-    x = ntplib.NTPClient()
 
     lstmin = -1
 
+    curnbupdates = 0
 
     while Encore:
-        windll.kernel32.SetConsoleCursorPosition(h, COORD(1, 15))
+        winconsole.setxy(1,15)
 
-        debclock = time.clock()
+        debclock = time.time()
         ladate = datetime.datetime.now() #.getnow() #datetime.utcfromtimestamp(x.request('europe.pool.ntp.org').tx_time)
         if ladate.minute != lstmin:
             for paire in pairs:
                 initcandle(paire,ladate)
             lstmin = ladate.minute
-            print(" -- ", ladate.hour, ":", ladate.minute, ":", ladate.second)
+            winconsole.Xprint(timserver.getdattime(),"nb upd =", curnbupdates)
+            curnbupdates = 0
 
+            winconsole.Xprint(" -- ", ladate.hour, ":", ladate.minute, ":", ladate.second)
 
+        curnbupdates = curnbupdates+1
         for idx,lapaire in enumerate(pairs):
             towrite =0
             id=lapaire+"-priceBid"
@@ -171,31 +159,32 @@ def scanweb(timeout):
                 lstvalask[idx] = valask
                 if (trackpaire == lapaire):
                     lstval=valask
-                    windll.kernel32.SetConsoleCursorPosition(h, COORD(1, 6))
-                    print("current : ", lstval, " cmd?")
+                    winconsole.setxy(1,6)
+                    winconsole.Xprint("current : ", lstval, " cmd?")
+
                     interactgraf.update2(valask)
                     if (SellOrBy):
                         if (valask > valcancel):
-                            print("CANCEL")
+                            winconsole.Xprint("CANCEL")
 
                         if (valask < valcible):
-                            print("ACCEPT")
+                            winconsole.Xprint("ACCEPT")
 
                     else:
                         if (valask > valcible):
-                            print("ACCEPT")
+                            winconsole.Xprint("ACCEPT")
 
                         if (valask  < valcancel):
-                            print("CANCEL")
+                            winconsole.Xprint("CANCEL")
 
                         #candlelize(lapaire, valbid)on candlelize sur le ask
 
             if (affich ==1 and towrite != 0 ):
-                print(" lapaire :", lapaire,r"/", valbid,"/",valask)
+                winconsole.Xprint(" lapaire :", lapaire,"/", valbid,"/",valask)
 
-        finclock = time.clock()
+        finclock = time.time()
         duration = finclock-debclock
-        print("---------------------- dur=",duration)
+        winconsole.Xprint("---------------------- dur="+duration)
         if duration < .50:
             time.sleep(.50-duration)
 
@@ -224,81 +213,94 @@ lethread = webThread(1,"scanthread",1)
 lethread.start()
 Command=1
 
-import sys
 import os
-import msvcrt
 import time
 
+a="$" #pour faire le 1er rafraichissement
 
 while Command !=0:
+    if a != "":
+        winconsole.cls()
+        winconsole.setxy(1,3)
 
-    os.system('cls')
-    windll.kernel32.SetConsoleCursorPosition(h, COORD(1, 1))
+        winconsole.Xprint("s: seuil reject",valcancel)
+        winconsole.Xprint("a: seuil accept",valcible)
+        winconsole.Xprint("x: achat/vente","Sell" if SellOrBy else "Buy")
 
-    print("s: seuil reject",valcancel)
-    print("a: seuil accept",valcible)
-    print("x: achat/vente","Sell" if SellOrBy else "Buy")
+        winconsole.Xprint("p: paire track (",trackpaire,")")
 
-    print("p: paire track (",trackpaire,")")
+        interactgraf.update2(lstval)
+        affich = 1
 
-    interactgraf.update2(lstval)
-    affich = 1
+        winconsole.setxy(1, 1)
+        winconsole.Xprint("current : ", lstval)
     a=""
-    windll.kernel32.SetConsoleCursorPosition(h, COORD(1, 6))
-    print("current : ",lstval," cmd?")
+
     while a=="":
-        if msvcrt.kbhit():
-            a=input()
+        if winconsole.Xkbhit():
+            a=winconsole.Xinput("")  #xprint a besoin d'un argument
         else:
-            interactgraf.updategraph(valcible,valcancel)
-        time.sleep(0.1)
+            if interactgraf.updategraph(valcible,valcancel) ==1:  #il y a eu une mise a jour -> changemetn de valeur
+                a="$" #commande bidon, juste pour rafraichir
+            else:
+                time.sleep(0.1)
 
     affich=0
-    os.system('cls')
+    #os.system('cls')
     if a=='q':
         Command=0
 
     try:
 
         if a=='s':
-            print ('cancel=',valcancel)
-            a = input ("nouveau seuil ?")
+            winconsole.setxy(1, 1)
+            winconsole.Xprint ('cancel=',valcancel)
+            a = winconsole.Xinput ("nouveau seuil ?")
             if a=="":
+                a = "$"
                 continue
             valcancel = float(a)
 
         if a == 'a':
-            print('accept=',valcible)
+            winconsole.setxy(1, 1)
+            winconsole.Xprint('accept=',valcible)
             if (SellOrBy):
-                a = input("nouveau seuil ARRET (min) ?")
+                a = winconsole.Xinput("nouveau seuil ARRET (min) ?")
             else:
-                a = input("nouveau seuil VALID (max) ?")
+                a = winconsole.Xinput("nouveau seuil VALID (max) ?")
 
             if a == "":
+                a = "$"
                 continue
 
             valcible = float(a)
 
     except ValueError:
+        a="$"
         continue
 
     if a == 'x':
-        print('Sell/Buy=',)
+        winconsole.setxy(1, 1)
+        winconsole.Xprint('Sell/Buy=',)
         if (SellOrBy):
-            print('sell')
+            winconsole.Xprint('sell')
         else:
-            print('buy')
-        a = input("nouveau sens (s/b)?")
+            winconsole.Xprint('buy')
+        a = winconsole.Xinput("nouveau sens (s/b)?")
         if a=='s':
             SellOrBy =True
         if a == 'b':
             SellOrBy = False
 
     if a=='p':
-        for index,current in enumerate(pairs):
-            print(index,":",current)
+        winconsole.cls()
+        winconsole.setxy(1, 3)
 
-        a = input("paire ?")
+        for index,current in enumerate(pairs):
+            winconsole.Xprint(index,":",current)
+
+        winconsole.setxy(1, 1)
+        a = winconsole.Xinput("paire ?")
         if a == "":
             continue
         trackpaire = pairs[int(a)]

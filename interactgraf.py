@@ -31,7 +31,7 @@ def updategraph(valcible,valcancel):
     global toupdate, x, y, ax1, fig
 
     if toupdate ==0:
-        return
+        return 0
 
     toupdate =0
 
@@ -44,11 +44,12 @@ def updategraph(valcible,valcancel):
         ydraw.append([valcible,valcancel,valeur])
 
     ax1.cla()
+    ax1.ticklabel_format(useOffset=False)
     ax1.plot(x,ydraw)
     fig.canvas.update()
     fig.canvas.flush_events()
     fig.show(False)
-
+    return 1
 
 def update():
     global x
