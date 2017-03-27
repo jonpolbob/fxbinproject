@@ -9,8 +9,9 @@ import time
 import threading
 
 
-pairs = ["eurusd", "usdjpy", "audusd", "gbpusd", "usdcad", "nzdusd", "audcad", "audchf", "audjpy", "eurchf", "eurgbp",
-         "eurjpy", "usdchf"]
+pairs = ["eurusd", "usdjpy", "audusd","gbpusd", "eurchf", "eurgbp"]
+         #"gbpusd", "usdcad", "nzdusd", "audcad", "audchf", "audjpy", "eurchf", "eurgbp",
+         #"eurjpy", "usdchf"]
 
 
 opval = []
@@ -35,17 +36,26 @@ def initall():
         minval.append(999999)
 
 
-def initcandle(paire,date):
+def initcandle(paire,date, defval):
     global pairs
     global opval
     global clval
     global maxval
     global minval
     global ladate
+    toto = opval
+    titi = ladate
 
     idx = pairs.index(paire)
-    if (opval != -1): #il y a des valeurs
-        print(paire," ",ladate[idx],':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',minval[idx])
+
+    if (opval[idx]==-1):
+        opval[idx]= defval
+        maxval[idx]=defval
+        minval[idx]=defval
+        clval[idx]=defval
+
+    if (opval[idx] != -1): #il y a des valeurs
+        print(paire," ",ladate[idx],':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',clval[idx])
 
     ladate[idx] = date
     opval[idx] = -1
@@ -109,10 +119,10 @@ def scanweb(timeout):
     while Encore:
         debclock = time.clock()
         ladate = datetime.datetime.now() #.getnow() #datetime.utcfromtimestamp(x.request('europe.pool.ntp.org').tx_time)
-        if ladate.min != lstmin:
+        if ladate.minute != lstmin:
             for paire in pairs:
-                initcandle(paire,datetime)
-            lstmin = ladate.min
+                initcandle(paire,ladate,lstvalbid[pairs.index(paire)])
+            lstmin = ladate.minute
 
         for idx,lapaire in enumerate(pairs):
             towrite =0
@@ -120,6 +130,9 @@ def scanweb(timeout):
             valeurbid = driver.find_element_by_id(id)
             if valeurbid == None:
                 continue
+            if (valeurbid.text == '---'):
+                continue
+
             valbid=float(valeurbid.text)
             if (valbid != lstvalbid[idx]):
                 towrite = 1
@@ -129,7 +142,10 @@ def scanweb(timeout):
 
             id = lapaire + "-priceAsk"
             valeurask = driver.find_element_by_id(id)
+
             if valeurask == None:
+                continue
+            if (valeurask.text == '---'):
                 continue
             valask = float(valeurask.text)
             if (valask != lstvalask[idx]):
@@ -138,7 +154,7 @@ def scanweb(timeout):
                 #candlelize(lapaire, valbid)on candlelize sur le ask
 
             if towrite != 0 :
-                print(ladate.hour, ":", ladate.minute, ":", ladate.second, " lapaire :", id, "valeur:", paire,r"/", valeurask.text)
+                print(ladate.hour, ":", ladate.minute, ":", ladate.second, " lapaire :", lapaire, "valeur:",valbid ,r"/", valeurask.text)
 
         finclock = time.clock()
         duration = finclock-debclock

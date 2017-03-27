@@ -60,22 +60,27 @@ for semaine in range(semainedeb,semainefin):
 
     pdtable = pd.DataFrame(nantable[mini:maxi][:]) #on limite aux cases remplies
 
-#ici on retravaille sur le panda Dataframe pour faire les moyennes mobiles, etc etc
+#ici on retravaille sur le panda ame ur faire les moyennes mobiles, etc etc
 #tableau avec un index pour l'axe des x
     index = np.arange(mini,maxi) #index en accord avec les cases remplies
 
 #utilisation des valeurs de la table
-    upband,dnband,upband80,dnband80 = calculsframe.calcbolingerreduced(pdtable)
+    upband,dnband,upband80,dnband80 = calculsframe.calcbolingerreduced(pdtable,[20,2.4,0.8])  #params = avg, hi bol , low bol
     mm80 = calculsframe.calcmm80(pdtable)
 
     upbandarray = np.array(upband)
 #2eme arg = position Y ou mettre la marque
     #nouveau detectinteressant : utilise les courbes bollinger et average80
     marksX, marksY, marksZ, count= calculsframe.detectinteressant(pdtable,[upband,dnband,upband80,dnband80,mm80]) #2eme col = high
-#marksY=upband[marksX] #liste des valeurs dont l'index est dans markx
+
+    #marksY=upband[marksX] #liste des valeurs dont l'index est dans markx
     print('resultats ',count)
 
-# Plot two charts to assess trades and equity curve
+    #ono calcule le resultat de ce marquage
+    calculsframe.calcresu(pdtable, marksX, marksY, [upband,dnband,upband80,dnband80,mm80])
+
+
+    # Plot two charts to assess trades and equity curve
     fig = plt.figure()
     fig.patch.set_facecolor('white')  # Set the outer colour to white
     ax1 = fig.add_subplot(211, ylabel='Price in $')
@@ -84,7 +89,7 @@ for semaine in range(semainedeb,semainefin):
     marker_style = dict(color='red', marker='v',
                     markersize=8, linestyle='None', markerfacecoloralt='gray')
 
-    marker_styleZ = dict(color='blue', marker='v',
+    marker_styleZ = dict(color='blue', marker='o',
                         markersize=8, linestyle='None', markerfacecoloralt='gray')
 
     marker_style2 = dict(color='red', marker='o',
@@ -95,7 +100,7 @@ for semaine in range(semainedeb,semainefin):
     marksXpos = np.array(marksX)+mini
 # Plot the "buy" trades against
 #ax1.plot(upband,'^', markersize=10, color)
-#ax1.plot(upband,'^', markersize=10, color='m'
+#ax1.plot(upbale1nd,'^', markersize=10, color='m'
     candlestick_ohlc(ax1, tabcandle, width=.8,colorup='#53c156', colordown='#ff1717')
     ax1.plot(index,upband,'^', ls='-', markersize=1, color='m')
     ax1.plot(index,dnband,'^', ls='-', markersize=1, color='g')
@@ -142,3 +147,4 @@ for ligne in eventstab :
     #ax1.plot(index, dnband, '^', ls='-', markersize=1, color='g')
     #ax1.plot(marksXpos, upband[marksX], **marker_style)
     plt.show()
+

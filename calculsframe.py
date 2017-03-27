@@ -3,14 +3,14 @@ import numpy as np
 
 # toutes sortes de calculs sur le dataframe
 #calcul des bolinger doubles
-def calcbolingerreduced(pdtable):#calcul de bolinger
-    length=30
-    hinumsd=1.9
-    lownumsd = 1.5
+def calcbolingerreduced(pdtable,params):#calcul de bolinger
+    length=params[0]
+    hinumsd=params[1]
+    lownumsd = params[2]
 
-    ave = pdtable[2].rolling(center=True,window=30).mean()
+    ave = pdtable[2].rolling(center=True,window=length).mean()
     #sd = pd.stats.moments.rolling_std(pdtable,length)
-    sd = pdtable[2].rolling(center=True,window=30).std()
+    sd = pdtable[2].rolling(center=True,window=length).std()
     upband = ave + (sd*hinumsd)
     dnband = ave - (sd*hinumsd)
     upband80 = ave + (sd * lownumsd)  #80% de bollinger
@@ -106,6 +106,8 @@ def checkfifo1(lafifo):
     return True and idxdeb > 10,idxdeb
 
 
+#nouvel essai ou on detecte 3 canle sur 5 sont des montees et traversent une des lilmllites des bool,
+# et la derniere candle, la eme est une descente
 def detectinteressantboll(pdtable,curves):
     bolhi = curves[0]
     bollo = curves[1]
@@ -144,11 +146,150 @@ def detectinteressantboll(pdtable,curves):
 
     return resuX,resuY,resuZ,count
 
+
+# cette detection recherche une sequence de 3 candles situes entre les bolinger sans passer en dessous
+# puis une descete
+#ca marche un peu avec des boli bien larges (0 pour moyenne, 2.4 et 0.8)
+def detectinteressantbol4(pdtable,curves):
+    bolhi = curves[0] #up
+    bollo = curves[1]#dn
+    bolhiba = curves[2]#up80
+    bollohi = curves[3] #dn80
+    moy80 = curves[4]
+
+    resuX = []  # tableau des index
+    resuY = []  # tableau des seuils ok
+    resuZ = []  # tableau des seuils stop
+    count = 0
+    dafifo = []
+    histogram = [0,0,0,0]
+
+    nbok =0
+    for idx, lacandle in pdtable.iterrows():
+        found = False
+        linelist = lacandle.values.tolist()
+        leopen = lacandle[0]  # open #le premier element de la fifo est une candle
+        lehigh = lacandle[1]  # high
+        lelow = lacandle[2]  # low
+        leclose = lacandle[3]  # close
+
+        lebolhi = bolhi[idx]
+        lebolbas= bolhiba[idx]
+        lamoy = moy80[idx]
+
+        found =False
+
+
+        #detecte une descente apres une sequence ok
+        if nbok == 3 and leopen > leclose and leclose < lebolbas :  #ok on a fini la sequence
+            found=True
+
+        if leclose < lebolbas :  #on repasse en dessous : on interrompt la sequence
+            histogram[nbok]+=1
+            nbok = 0
+
+        if leopen <= leclose and leopen >= lebolbas and leclose <= lehigh :
+            nbok  += 1
+            if nbok >3:
+                nbok = 3
+
+        if found:
+            resuX.append(idx)
+            resuY.append(lehigh) #on agira sur le close -> valeur de depart  a utiliser pour laclul du resultat
+            resuZ.append(leclose)
+            count = count + 1
+
+    print("nb item found ", len(resuZ))
+    print("histogram",histogram)
+
+    return resuX, resuY, resuZ, count
+
+
+#curvves = upbol dnbol, upbol80 , dnbol80, mm80
+#cette detection recherche 3 candle parmi 5 qui sont en motee, et a cheval sur une lin de bolinger, et ensuite une descente
+#resultat : caca detecte RIEN, meme avec des bolingers tres lrges
+
+def detectinteressantbol3(pdtable,curves):
+    bolhi = curves[0] #up
+    bollo = curves[1]#dn
+    bolhiba = curves[2]#up80
+    bollohi = curves[3] #dn80
+    moy80 = curves[4]
+
+    resuX=[] #tableau des index
+    resuY=[]   #tableau des seuils ok
+    resuZ = [] #tableau des seuils stop
+    count=0
+    dafifo = []
+
+    for idx,lacandle in pdtable.iterrows():
+        found=False
+        linelist = lacandle.values.tolist()
+        dafifo.append([linelist,bolhi[idx],bolhiba[idx],moy80[idx]])
+        if len(dafifo)<=6:
+            continue #on lit une ligne de plus, pas de detection
+
+        #reduction de la fifo
+        dafifo = dafifo[1:]
+        countok = 0
+
+        prvlow = dafifo[0][0][0] #open d 1er candle
+
+        for lesdata in dafifo[:-1]:
+            leopen = lesdata[0][0]  # open #le premier element de la fifo est une candle
+            lehigh = lesdata[0][1]  # high
+            lelow = lesdata[0][2]  # low
+            leclose = lesdata[0][3]  # close
+            bollhimax = lesdata[1]
+            bollhilow = lesdata[2]
+            lamoy80=lesdata[3]  #34eme element de la ffio
+
+            ok = False
+            # teste si openclose a cheval sr les limites des bol
+            if leopen < bollhilow and leclose > bollhilow and leclose <  bollhimax :
+                ok = True
+            if leopen > bollhilow and leopen<  bollhimax and leclose > bollhimax :
+                ok = True
+
+          #  if prvlow < leopen:
+           #     ok = False # pas d'increent de countok car c'est pas bon pour ce candle la
+
+            prvlow = leopen  #pour le prochain tour
+
+            if ok:
+                countok += 1
+            #test s open et close dans la bande
+            #if open > bollhimax and close < bollhilow and open > close:
+            #   ok = True
+
+        if countok > 3 : #au moi s 3 sont ok
+            #on regarde le final
+            datafinal = dafifo[-1]
+            leopen = datafinal[0][0]  # open
+            lehigh = datafinal[0][1]  # high
+            lelow = datafinal[0][2]  # low
+            leclose = datafinal[0][3]  # close
+            bollhimax = datafinal[1]
+            bollhilow = datafinal[2]
+            marqueurm80 = datafinal[3]
+
+            if leclose < bollhilow and leopen < bollhimax and leopen > leclose:
+                found = True
+
+        if found:
+            resuX.append(idx)
+            resuY.append(marqueurm80)
+            resuZ.append(bollhimax)
+            count = count + 1
+
+    print("nb item found ",len(resuZ))
+    return resuX, resuY, resuZ, count
+
 #fait la liste des points interessants
 # on sort un tableau contenant les index des points interessants
 def detectinteressant(pdtable,curves): #calcul de bolinger
 #    return detectinteressant0(pdtable)
-    return detectinteressantboll(pdtable,curves)
+    return detectinteressantbol4(pdtable,curves)
 
 #detectinteessant sur une fifo de 10
 
@@ -177,3 +318,48 @@ def detectinteressant0(pdtable):
                 count=count+1
 
     return resuX,count
+
+
+
+
+
+#clcul des resultats des evenements detectes
+#les arguments sont : les candles
+#la liste des index et des vleurs au declechement
+#les courbes lissees
+def calcresu(pdtable,tabidx,tabval,curves):
+    pip = 3
+    bolbas = curves[3]
+    cntwin =0
+    cntloose=0
+
+    for leidx,lavaleur in zip(tabidx,tabval):
+        maxval = 0  #valeur atteinte maxi
+        minval=999999
+        count =0
+        Encore = True
+        curidx = leidx
+
+        while(Encore):
+            count +=1
+          #  print(pdtable.iloc(curidx))
+            candle2 = pdtable.iloc[curidx,2]
+            candle1 = pdtable.iloc[curidx,1]
+            maxval = max(maxval,candle1) #max
+            minval = min(minval,candle2)
+            if (candle2 < bolbas[curidx]):   #on arrete qd le min est asse sous le bol du bas
+                cntwin +=1
+                print("win val= ",lavaleur, "max atteint =",maxval, "cunt=", count)
+                break
+
+            if (candle1>lavaleur+pip*.0001): #rate a +3pip
+                cntloose +=1
+                print("loose val= ", lavaleur, "  min atteint= ", minval, "(maxcancel = ",candle2,"pour ",lavaleur+pip*.0001,") count=", count)
+
+                break;
+
+            curidx = curidx+1
+            if (curidx >= len(pdtable)):
+                break
+
+    print ("win:",cntwin,"  loose : ",cntloose)
