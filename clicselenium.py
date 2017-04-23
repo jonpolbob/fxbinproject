@@ -146,8 +146,7 @@ def liremois(mois,annee,listepairs):
         inzipname = os.path.relpath(ficname,"c:\\tmp")
         print(inzipname)
         zfileout.write(ficname,inzipname) # on ne garde qu e le nom fichier on vire le path
-        print('--- effacement de ',ficname,' ----------')
-        os.remove(ficname)
+        print('--- effacement de ',ficname,' ----------')        os.remove(ficname)
 
     zfileout.close()
     return zipoutname

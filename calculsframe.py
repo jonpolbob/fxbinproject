@@ -2,7 +2,10 @@ import pandas as pd
 import numpy as np
 
 # toutes sortes de calculs sur le dataframe
+
+
 #calcul des bolinger doubles
+#cette fonction sort les 4 bollineger de tous les points de la table pdtable
 def calcbolingerreduced(pdtable,params):#calcul de bolinger
     length=params[0]
     hinumsd=params[1]
@@ -13,8 +16,7 @@ def calcbolingerreduced(pdtable,params):#calcul de bolinger
     sd = pdtable[2].rolling(center=True,window=length).std()
     upband = ave + (sd*hinumsd)
     dnband = ave - (sd*hinumsd)
-    upband80 = ave + (sd * lownumsd)  #80% de bollinger
-    dnband80 = ave - (sd * lownumsd)
+    upband80 = ave + (sd * lownumsd)  #80% de bollinger dnband80 = ave - (sd * lownumsd)
 
     return upband,dnband,upband80,dnband80
 
@@ -31,6 +33,7 @@ def calcbolinger(pdtable):#calcul de bolinger
 
     return upband,dnband
 
+# calcule un bollinger avec une longueur et un ecart type different du normal
 def calcmm80(pdtable):#calcul de bolinger
     length=80
     numsd=2.0
@@ -47,7 +50,7 @@ def calcmm80(pdtable):#calcul de bolinger
 #super bourrin pour que ca marche
 #pdtable est une table panda a 1 colonne
 #la liste en sortie contient l'indice de la premiere candle de la zone detectee
-
+#checkfifo  ^0 ne calcule que ke fait que un des open de l'esemble de détéction ne dépasse le low du début
 def checkfifo0(lafifo):
     valeurdeb = lafifo[0][1][0]  # ohlc : on prend le open
     idxdeb = lafifo[0][0]  # index de la mesure
@@ -65,7 +68,9 @@ def checkfifo0(lafifo):
 
     return Found and idxdeb > 10,idxdeb
 
-
+#checkfifo1 verifie que open-close est une montée pendant 4 candles
+#et que la montée est toujours supérieure a 10 de la précédente
+#enfin on vérifie cue le 5eme  est une descente
 def checkfifo1(lafifo):
     valeurdeb = lafifo[0][1][0]  # ohlc : on prend le open
     idxdeb = lafifo[1][0]  # index de la mesure
@@ -106,8 +111,19 @@ def checkfifo1(lafifo):
     return True and idxdeb > 10,idxdeb
 
 
+
+
+#-------------------------------------------------------------------------------------
+#  les detectonteressant generent une liste des points de debut de sequneces qui marchent , les 4 valeurs sorties sont :
+# les positions en x des séquences qui marchent ,
+# resuy est le seuil stop a poser
+# il faut sans doute modifier ctte valeur seuil dans tous ces calculs
+# les points z ou il faudra afficher les marques et le count du nb de marques
+#-------------------------------------------------------------------------------------
+
 #nouvel essai ou on detecte 3 canle sur 5 sont des montees et traversent une des lilmllites des bool,
 # et la derniere candle, la eme est une descente
+#le seuil stop choisi est la bollinger aute(?)
 def detectinteressantboll(pdtable,curves):
     bolhi = curves[0]
     bollo = curves[1]
@@ -116,8 +132,8 @@ def detectinteressantboll(pdtable,curves):
     moy80 = curves[4]
 
     resuX=[] #tableau des index
-    resuY=[]   #tableau des seuils ok
-    resuZ = [] #tableau des seuils stop
+    resuOK=[]   #tableau des seuils ok
+    resuSTOP = [] #tableau des seuils stop
     count=0
 
     for idx,lacandle in pdtable.iterrows():
@@ -140,16 +156,20 @@ def detectinteressantboll(pdtable,curves):
 
         if found:
             resuX.append(idx)
-            resuY.append(mmval)
-            resuZ.append(bollhimax)
+            resuOK.append(mmval)  #seil accepte gain
+            resuSTOP.append(bollhimax) #seuil abandon
             count = count + 1
 
-    return resuX,resuY,resuZ,count
+    return resuX,resuOK,resuSTOP,count
 
 
-# cette detection recherche une sequence de 3 candles situes entre les bolinger sans passer en dessous
+# cette detection utilise des bolinger modifiézs recherche une sequence de 3 candles situes entre les bolinger sans passer en dessous
+#il faut que top et low soient entre les bolinger et bolinerhigh, ou top au dessus
 # puis une descete
-#ca marche un peu avec des boli bien larges (0 pour moyenne, 2.4 et 0.8)
+# en sortie : inex de la sequence detecteee
+# seuils ok et stop a utiliser
+#nombre de sequences trouvees dans cette semaine
+#RESULTAT ca marche un peu avec des boli bien larges (0 pour moyenne, 2.4 et 0.8)
 def detectinteressantbol4(pdtable,curves):
     bolhi = curves[0] #up
     bollo = curves[1]#dn
@@ -158,8 +178,8 @@ def detectinteressantbol4(pdtable,curves):
     moy80 = curves[4]
 
     resuX = []  # tableau des index
-    resuY = []  # tableau des seuils ok
-    resuZ = []  # tableau des seuils stop
+    resuOK = []  # tableau des seuils ok
+    resuSTOP = []  # tableau des seuils stop
     count = 0
     dafifo = []
     histogram = [0,0,0,0]
@@ -181,6 +201,7 @@ def detectinteressantbol4(pdtable,curves):
 
 
         #detecte une descente apres une sequence ok
+        #avec une close en dessous de la bolinger basse
         if nbok == 3 and leopen > leclose and leclose < lebolbas :  #ok on a fini la sequence
             found=True
 
@@ -195,14 +216,15 @@ def detectinteressantbol4(pdtable,curves):
 
         if found:
             resuX.append(idx)
-            resuY.append(lehigh) #on agira sur le close -> valeur de depart  a utiliser pour laclul du resultat
-            resuZ.append(leclose)
+            resuOK.append(lehigh) #valeur de stop a utiliser apres cette sequence
+            resuSTOP.append(leclose) #valeur de OK a utiliser apres cette sequence
             count = count + 1
 
-    print("nb item found ", len(resuZ))
+    print("nb item found ", len(resuSTOP))
     print("histogram",histogram)
-
-    return resuX, resuY, resuZ, count
+    #on retourne la liste des index detectes, la veleur de deppart de la sequence (car il v=faut mettre un seul pour le calcul de la reussite/echec
+    # et la valeur z pour la marque
+    return resuX, resuOK, resuSTOP, count
 
 
 #curvves = upbol dnbol, upbol80 , dnbol80, mm80
@@ -217,8 +239,8 @@ def detectinteressantbol3(pdtable,curves):
     moy80 = curves[4]
 
     resuX=[] #tableau des index
-    resuY=[]   #tableau des seuils ok
-    resuZ = [] #tableau des seuils stop
+    resuOK=[]   #tableau des seuils ok
+    resuSTOP = [] #tableau des seuils stop
     count=0
     dafifo = []
 
@@ -278,12 +300,12 @@ def detectinteressantbol3(pdtable,curves):
 
         if found:
             resuX.append(idx)
-            resuY.append(marqueurm80)
-            resuZ.append(bollhimax)
+            resuOK.append(marqueurm80)
+            resuSTOP.append(bollhimax)
             count = count + 1
 
-    print("nb item found ",len(resuZ))
-    return resuX, resuY, resuZ, count
+    print("nb item found ",len(resuSTOP))
+    return resuX, resuOK, resuSTOP, count
 
 #fait la liste des points interessants
 # on sort un tableau contenant les index des points interessants

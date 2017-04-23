@@ -12,7 +12,6 @@ def calculfeatures(revfifo):
     todraw = []
     for value in revfifo:
         todraw.append(value[1:])
-
     #plt.plot()
     #plt.show()
 
@@ -50,8 +49,7 @@ def generefeatures(tablein, marksX, tabcandle, upband, dnband):
 
         tablein.append(featureslist)
 
-    return tablein
-
+    return
 def extracteventsdata(semaine, featurestab, marksX, tabcandle, upband, dnband):
     for numidx in marksX:
         eventdata=[semaine,numidx]
