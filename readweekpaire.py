@@ -78,6 +78,7 @@ def candelize(tableau):
     valclose = valeur  # valeur
     vallo = valeur  # valeur
     valhi = valeur  # valeur
+    nbmesures=0
 
     curidx = tableau[0][0]  # numero premiere minute du tableau
     lstidx = curidx
@@ -86,12 +87,14 @@ def candelize(tableau):
         valeur = line[2]
         if curidx != lstidx:  #changement de minute
           #  print([lstidx, valopen, valhi, vallo, valclose])
-            tabout.append([lstidx,valopen,valhi,vallo,valclose]) #ds tableau sortie
+            tabout.append([lstidx,nbmesures,valopen,valhi,vallo,valclose]) #ds tableau sortie
             valopen = valeur  # valeur entree
             vallo = valeur # valeur mini
             valhi = valeur # valeur max
+            nbmesures =0
             print (line[1]) #on ecrit la date
 
+        nbmesures = nbmesures+1
         lstidx = curidx
         if valeur > valhi:
             valhi = valeur

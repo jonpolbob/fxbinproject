@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#programme lisant les datas sur free-forex, lit les paires d'un mois annee en bid ou call
+
+#  programme lisant les datas sur free-forex,
+# a  la difference de clicselenioum, on ne lit que une paire
+# pour un pois et on le dezippe dans un sous dossier
+# ce fichier sera utilise ensuite pour faire les fichiers de semaine
+
+# lit les paires d'un mois annee en bid ou call
 #les dezippe , met ensemble toutes les paires d"un meme mois an
 #et en fait un zip
 
@@ -38,9 +44,9 @@ class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
 
 
-def __init__(self):
-    """Constructor"""
-    self._handle = None
+    def __init__(self):
+        """Constructor"""
+        self._handle = None
 
 
     def find_window(self, class_name, window_name=None):
@@ -123,8 +129,9 @@ def loadpairemoisan(paire,mois,an):
 
     return newpath,"c:\\tmp\\"+paire+".csv"
 
-
-
+##################################################"
+#lit tous les fichiers d'une liste de paires
+##################################################"
 def liremois(mois,annee,listepairs):
 
     listefic = []  # liste des fichier extraits
@@ -151,8 +158,11 @@ def liremois(mois,annee,listepairs):
     zfileout.close()
     return zipoutname
 
+
+######################################################"""
 #ici le main
 #listemois=["01","02","03","04","05","06","07","08","09"]
+######################################################"""
 annee="2015"
 listemois=["01"] #,"03","04","05","06","07","08","09","10","11","12"]
 listepaires=["EURUSD","EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
@@ -161,5 +171,5 @@ listepaires=["EURUSD","EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBP
 #antidemarrage en librrairie
 if __name__ == "__main__":
     # le programme principal
-    for mois in listemois:(mois,annee, listepaires)
+#    for mois in listemois:(mois,annee, listepaires)
 

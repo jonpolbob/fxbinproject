@@ -33,10 +33,10 @@ class MyThread(Thread):
                 print(i)
                 #print('Value %d in thread %s' % (i, self.getName()))
                 #filename = i[2]+String(i[1])+String(i[0])+".csv"
-                filename = i[2] + '%0*d' % (3, i[1]) +"-"+ '%0*d' % (3, i[0])+".csv"
+                filename = i[2] + "-"+ '%0*d' % (3, i[0])+".csv"
                 print(filename)
                 with open(filename,'a') as csvfile:
-                    spamwriter = csv.writer(csvfile,delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                    spamwriter = csv.writer(csvfile,delimiter='\t',quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
                     spamwriter.writerow(i)
                     csvfile.close()

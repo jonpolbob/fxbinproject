@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#programme lisant les datas sur free-forex, lit les paires d'un mois annee en bid ou call
-#les dezippe , met ensemble toutes les paires d"un meme mois an
+#programme lisant les datas sur free-forex,
+# lit toutes les mois en question
+# pour une paire
+# et fabrique les fichiers semaine
+#pour ca, on charge tous les fichiers de mois
+# on les dezippe
+# et on genere les fichiers semaine l'un apres l'autre tan que c'est possible
+# met ensemble toutes les paires d"un meme mois an
 #et en fait un zip
 
 #il reste juste a tout experdier dans googledrive
@@ -12,10 +18,6 @@
 #selon les parametres de chrome il y a ou non un message d'alerte des cookies
 # avec firefow ca y est, avec chrome ca n'y est pas toujours
 
-#corection le 30 dec 1- : les exceptions de selenium ont changé par rapport au source d'origine (python 3 ?)
-#rajput de l'effacement des csv a la fin de la fabrication du zip pour eviter d'inclure dans le zip d'un autre mois les csv d'un mois precedent pas recupere
-
-
 __author__ = 'cagibi'
 
 from selenium import webdriver
@@ -24,6 +26,7 @@ import win32gui
 import re
 import os
 import zipfile
+import numpy as np
 
 # personalisation des options(rep de download et adresse vers chromdriver
 options = webdriver.ChromeOptions()
@@ -146,20 +149,43 @@ def liremois(mois,annee,listepairs):
         inzipname = os.path.relpath(ficname,"c:\\tmp")
         print(inzipname)
         zfileout.write(ficname,inzipname) # on ne garde qu e le nom fichier on vire le path
-        print('--- effacement de ',ficname,' ----------')        os.remove(ficname)
+        print('--- effacement de ',ficname,' ----------')
+        os.remove(ficname)
 
     zfileout.close()
     return zipoutname
 
 #ici le main
-#listemois=["01","02","03","04","05","06","07","08","09"]
+listemois=["01","02","03","04","05","06","07","08","09","10","11","12"]
 annee="2015"
-listemois=["01"] #,"03","04","05","06","07","08","09","10","11","12"]
-listepaires=["EURUSD","EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
 
+listepaires=["EURUSD"] #,"EURCHF","EURGBP","EURJPY","USDCAD","USDCHF","USDJPY","GBPCHF","GBPUSD","AUDUSD","EURCAD"]
+
+import readweekpaire
 
 #antidemarrage en librrairie
 if __name__ == "__main__":
     # le programme principal
     for mois in listemois:(mois,annee, listepaires)
+
+paire="EURUSD"
+annee = 2015
+
+#ensuite on a tous les mois de cette paire : on sort les semaine avec readweek paire
+for week in np.arange(1,52):
+    letableau = readweekpaire.readweek(week,annee,paire)
+    tabcandle = readweekpaire.candelize(letableau)
+    print (tabcandle)
+#on fabrique une line avec les valeurs de candle, il faut ajouter les elements de date
+    #il faudra aussi modifier candelize pour avoir le nb de mesures
+    tabout=[]
+    for lecandle in tabcandle :
+        i = [annee, week, lecandle[0], paire]
+        i.extend(lecandle[1:])
+        tabout.append(i)
+
+    print (tabout)
+    
+
+
 

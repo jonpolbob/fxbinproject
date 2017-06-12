@@ -57,7 +57,7 @@ def initcandle(paire,date):
     if (affich==1 and opval != -1): #il y a des valeurs
         winconsole.Xprint(paire," ",ladate[idx].hour,":",ladate[idx].minute,':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',clval[idx])
 
-    ladate[idx] = date
+    ladate[idxate
     opval[idx] = -1
     clval[idx] = -1
     maxval[idx] =-1
@@ -144,7 +144,6 @@ def scanweb(timeout):
                 towrite = 1
                 lstvalbid[idx] = valbid
                 candlelize(lapaire,valbid)
-
 
             id = lapaire + "-priceAsk"
             valeurask = driver.find_element_by_id(id)

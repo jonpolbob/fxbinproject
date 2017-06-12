@@ -208,6 +208,7 @@ import os.path
 #renvoie le nb de jours lus quand le balayage est fini (None, nbjourslus)
 #charge dans le tableau le nombre de jourd nbjours a partir du jour jour
 def readlines(datedeb, nbjours, jour,nomzip,paire):
+    #on lit le zip sur le disque
     fh1 = open(nomzip, 'rb')
     z1 = zipfile.ZipFile(fh1)  # classe lisant le zipdanzs le fichier ouvert
     nbjourslus=0

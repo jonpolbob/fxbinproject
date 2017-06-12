@@ -2,6 +2,10 @@ import selenium
 import readwebwindowserver
 import readwebwindows
 
+#analyse temps reel des paires et fabrication des candles
+# utilise selenium
+# via readwebwindows (selenium, pour windows) ou readweb (lecture linux )
+
 driver = readwebwindows.initwebwindows()
 #driver = readwebwindowserver.initwebwindowsvr()
 driver.get("http://www.dailyfx.com/forex-rates")
@@ -24,6 +28,10 @@ listitems = {"eurusd":[0,0,0,0,0,0,0],
 Encore =True
 
 from datetime import datetime, timezone, timedelta
+
+
+#fait les caluls sur les dats :
+#date cournte, iddex par rapport au dimanche soir, eetc
 
 def datprocess():
     #lecture heure du moment en utc
@@ -49,13 +57,13 @@ def datprocess():
 
 
 
-def savepaires(minute):
+def savepaires(semaine,minute):
     if minute == -1:
         return
 
     for curpair in listitems:
         lapaire  = curpair
-        semaine = 0
+        #semaine = 0
         nbchangements = listitems[curpair][1] # nomre d'infos obtenues sur la minute
         openvalue =  listitems[curpair][3]
         highvalue =  listitems[curpair][4]
@@ -85,7 +93,7 @@ while Encore == True:
     nowhour,countmin,sem = datprocess()
     if countmin != lstcountmin: #fin d'une minute
         print("--- ",countmin," ---")
-        savepaires(countmin)
+        savepaires(sem, countmin)
         newtime =True
     lstcountmin = countmin
     lstsemnum = sem

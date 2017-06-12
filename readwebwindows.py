@@ -10,7 +10,7 @@ def initwebwindows():
     options = webdriver.ChromeOptions()
     prefs = {"download.default_directory": "c:/tmp"}
     options.add_experimental_option("prefs", prefs)
-    options.add_argument("headless");
+   # options.add_argument("headless");
     chromedriver = "c:/windows/system32/chromedriver.exe"
     driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
     driver.set_page_load_timeout(timeout)
