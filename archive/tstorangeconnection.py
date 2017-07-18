@@ -1,0 +1,16 @@
+import socket
+s=socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+s.connect(("192.168.1.9",12345))
+s.send(u"blb la")
+s.send("blb                                                   la")
+s.send("blb                                                   la")
+s.send("blb                                                   la")
+s.send("blb                                                   la")
+s.send("blb                                                   la")
+s.send("blb                                                   la")
+s.send("blb                                                   la")
+s.send("blb                                                   la")
+s.send("blb
+s.send("blb                                                   la")
+print(s.recv(1024))
+s.close()

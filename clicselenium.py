@@ -35,12 +35,11 @@ driver = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
 driver.set_page_load_timeout(30)
 
 class WindowMgr:
+
     """Encapsulates some calls to the winapi for window management"""
-
-
-def __init__(self):
-    """Constructor"""
-    self._handle = None
+    def __init__(self):
+        """Constructor"""
+        self._handle = None
 
 
     def find_window(self, class_name, window_name=None):
@@ -65,7 +64,7 @@ def __init__(self):
 
 #charge un fichier de paires pour un mois et une annee donnee
 #renvoie le nom du fichier csv extrait
-def loadpairemoisan(paire,mois,an):
+    def loadpairemoisan(paire,mois,an):
     URL = "http://www.histdata.com/download-free-forex-historical-data/?/ninjatrader/tick-bid-quotes/"+paire+"/"+an+"/"+mois+"/"
     FileName = "HISTDATA_COM_NT_"+paire+"_T_BID_"+an+mois+".zip"
     RealFileName = "HISTDATA_COM_NT_"+paire+"_T_BID"+an+mois+".zip"
@@ -146,7 +145,8 @@ def liremois(mois,annee,listepairs):
         inzipname = os.path.relpath(ficname,"c:\\tmp")
         print(inzipname)
         zfileout.write(ficname,inzipname) # on ne garde qu e le nom fichier on vire le path
-        print('--- effacement de ',ficname,' ----------')        os.remove(ficname)
+        print('--- effacement de ',ficname,' ----------')
+        os.remove(ficname)
 
     zfileout.close()
     return zipoutname

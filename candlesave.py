@@ -1,6 +1,8 @@
 
 from threading import Thread
  #modeul sauvagardant les candle d'une minute sous thread dans des fichiers
+#le run lance le thread qui scanne la fif et enregistre
+# pushresu charge la fifo avec des valeurs (semaine, minute, paire, nbmesures, open, top, low, close)
 
 
 # Start running the threads!

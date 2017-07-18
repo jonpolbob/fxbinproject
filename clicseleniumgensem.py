@@ -126,8 +126,10 @@ def loadpairemoisan(paire,mois,an):
 
     return newpath,"c:\\tmp\\"+paire+".csv"
 
-
-
+########################################""
+#lit pour une liste de paires un mois et une annee
+# et ecrit tout dans un zip contenant les datas de toutes ces paires, chacune dans un csv
+#########################################""""
 def liremois(mois,annee,listepairs):
 
     listefic = []  # liste des fichier extraits
@@ -165,26 +167,27 @@ import readweekpaire
 
 #antidemarrage en librrairie
 if __name__ == "__main__":
-    # le programme principal
-    for mois in listemois:(mois,annee, listepaires)
+# le programme principal
+    #for mois in listemois:
+    #    liremois(mois,annee, listepaires)
 
-paire="EURUSD"
-annee = 2015
+    paire="EURUSD"
+    annee = 2015
 
-#ensuite on a tous les mois de cette paire : on sort les semaine avec readweek paire
-for week in np.arange(1,52):
-    letableau = readweekpaire.readweek(week,annee,paire)
-    tabcandle = readweekpaire.candelize(letableau)
-    print (tabcandle)
+    #ensuite on a tous les mois de cette paire : on sort les semaine avec readweek paire
+    for week in np.arange(1,52):
+        letableau = readweekpaire.readweek(week,annee,paire)
+        tabcandle = readweekpaire.candelize(letableau)
+        print (tabcandle)
 #on fabrique une line avec les valeurs de candle, il faut ajouter les elements de date
     #il faudra aussi modifier candelize pour avoir le nb de mesures
-    tabout=[]
-    for lecandle in tabcandle :
-        i = [annee, week, lecandle[0], paire]
-        i.extend(lecandle[1:])
-        tabout.append(i)
+        tabout=[]
+        for lecandle in tabcandle :
+            i = [annee, week, lecandle[0], paire]
+            i.extend(lecandle[1:])
+            tabout.append(i)
 
-    print (tabout)
+        print (tabout)
     
 
 

@@ -1,16 +1,18 @@
-import readwebwindows
-import winconsole
+#programme princpal de lecture des paires en live sur pc
+#lit les paires en live
+#utilise readwebwindows pour selenium
+#le scan est dans un thread a part, ce qui permet de gerer l'interface utilsateur pendant le scan
+#une paire speciale (trackpaire) est analysee dfferemment
+# les autres generent des candles
+#winconsole permet l'ffichae de commentaires suiivante l'ordi qui execute
 
-import re
-import os
-import time
-import zipfile
 import datetime
 import threading
 
 import interactgraf
+import readwebwindows
 import timserver
-
+from archive import winconsole
 
 pairs = ["eurusd", "usdjpy", "audusd", "gbpusd", "usdcad", "nzdusd", "audcad", "audchf", "audjpy", "eurchf", "eurgbp",
          "eurjpy", "usdchf"]
@@ -43,7 +45,7 @@ def initall():
         maxval.append(-1)
         minval.append(999999)
 
-
+#initialisation d'une candle en debut de semaine
 def initcandle(paire,date):
     global pairs
     global opval
@@ -55,14 +57,15 @@ def initcandle(paire,date):
 
     idx = pairs.index(paire)
     if (affich==1 and opval != -1): #il y a des valeurs
-        winconsole.Xprint(paire," ",ladate[idx].hour,":",ladate[idx].minute,':','O=',opval[idx],'H=',maxval[idx],'L=',minval[idx],'C=',clval[idx])
+        winconsole.Xprint(paire, " ", ladate[idx].hour, ":", ladate[idx].minute, ':', 'O=', opval[idx], 'H=', maxval[idx], 'L=', minval[idx], 'C=', clval[idx])
 
-    ladate[idxate
+    ladate[idx]=date
     opval[idx] = -1
     clval[idx] = -1
     maxval[idx] =-1
     minval[idx] = 9999
 
+#ajoute une nouvelle valeur a une candle
 def candlelize(paire,valeur):
     global pairs
     global opval
@@ -117,7 +120,7 @@ def scanweb(timeout):
     curnbupdates = 0
 
     while Encore:
-        winconsole.setxy(1,15)
+        winconsole.setxy(1, 15)
 
         debclock = time.time()
         ladate = datetime.datetime.now() #.getnow() #datetime.utcfromtimestamp(x.request('europe.pool.ntp.org').tx_time)
@@ -125,7 +128,7 @@ def scanweb(timeout):
             for paire in pairs:
                 initcandle(paire,ladate)
             lstmin = ladate.minute
-            winconsole.Xprint(timserver.getdattime(),"nb upd =", curnbupdates)
+            winconsole.Xprint(timserver.getdattime(), "nb upd =", curnbupdates)
             curnbupdates = 0
 
             winconsole.Xprint(" -- ", ladate.hour, ":", ladate.minute, ":", ladate.second)
@@ -159,7 +162,7 @@ def scanweb(timeout):
                 lstvalask[idx] = valask
                 if (trackpaire == lapaire):
                     lstval=valask
-                    winconsole.setxy(1,6)
+                    winconsole.setxy(1, 6)
                     winconsole.Xprint("current : ", lstval, " cmd?")
 
                     interactgraf.update2(valask)
@@ -180,11 +183,11 @@ def scanweb(timeout):
                         #candlelize(lapaire, valbid)on candlelize sur le ask
 
             if (affich ==1 and towrite != 0 ):
-                winconsole.Xprint(" lapaire :", lapaire,"/", valbid,"/",valask)
+                winconsole.Xprint(" lapaire :", lapaire, "/", valbid, "/", valask)
 
         finclock = time.time()
         duration = finclock-debclock
-        winconsole.Xprint("---------------------- dur="+duration)
+        winconsole.Xprint("---------------------- dur=" + duration)
         if duration < .50:
             time.sleep(.50-duration)
 
@@ -203,7 +206,6 @@ class webThread(threading.Thread):
     def run(self):
         scanweb(120)
 
-import colorama  #pour emulation terminal ansi
 
 #pour xy positionnement console
 
@@ -213,7 +215,6 @@ lethread = webThread(1,"scanthread",1)
 lethread.start()
 Command=1
 
-import os
 import time
 
 a="$" #pour faire le 1er rafraichissement
@@ -221,13 +222,13 @@ a="$" #pour faire le 1er rafraichissement
 while Command !=0:
     if a != "":
         winconsole.cls()
-        winconsole.setxy(1,3)
+        winconsole.setxy(1, 3)
 
-        winconsole.Xprint("s: seuil reject",valcancel)
-        winconsole.Xprint("a: seuil accept",valcible)
-        winconsole.Xprint("x: achat/vente","Sell" if SellOrBy else "Buy")
+        winconsole.Xprint("s: seuil reject", valcancel)
+        winconsole.Xprint("a: seuil accept", valcible)
+        winconsole.Xprint("x: achat/vente", "Sell" if SellOrBy else "Buy")
 
-        winconsole.Xprint("p: paire track (",trackpaire,")")
+        winconsole.Xprint("p: paire track (", trackpaire, ")")
 
         interactgraf.update2(lstval)
         affich = 1
@@ -238,7 +239,7 @@ while Command !=0:
 
     while a=="":
         if winconsole.Xkbhit():
-            a=winconsole.Xinput("")  #xprint a besoin d'un argument
+            a= winconsole.Xinput("")  #xprint a besoin d'un argument
         else:
             if interactgraf.updategraph(valcible,valcancel) ==1:  #il y a eu une mise a jour -> changemetn de valeur
                 a="$" #commande bidon, juste pour rafraichir
@@ -254,7 +255,7 @@ while Command !=0:
 
         if a=='s':
             winconsole.setxy(1, 1)
-            winconsole.Xprint ('cancel=',valcancel)
+            winconsole.Xprint ('cancel=', valcancel)
             a = winconsole.Xinput ("nouveau seuil ?")
             if a=="":
                 a = "$"
@@ -263,7 +264,7 @@ while Command !=0:
 
         if a == 'a':
             winconsole.setxy(1, 1)
-            winconsole.Xprint('accept=',valcible)
+            winconsole.Xprint('accept=', valcible)
             if (SellOrBy):
                 a = winconsole.Xinput("nouveau seuil ARRET (min) ?")
             else:
@@ -281,7 +282,7 @@ while Command !=0:
 
     if a == 'x':
         winconsole.setxy(1, 1)
-        winconsole.Xprint('Sell/Buy=',)
+        winconsole.Xprint('Sell/Buy=', )
         if (SellOrBy):
             winconsole.Xprint('sell')
         else:
@@ -297,7 +298,7 @@ while Command !=0:
         winconsole.setxy(1, 3)
 
         for index,current in enumerate(pairs):
-            winconsole.Xprint(index,":",current)
+            winconsole.Xprint(index, ":", current)
 
         winconsole.setxy(1, 1)
         a = winconsole.Xinput("paire ?")

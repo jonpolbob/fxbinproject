@@ -2,6 +2,8 @@ from lxml import html
 from lxml import etree
 import requests
 
+#programme de test de la lecture des paires en live
+
 page = requests.get('https://www.dailyfx.com/forex-rates')
 #for e in page:
 #    print(e)
